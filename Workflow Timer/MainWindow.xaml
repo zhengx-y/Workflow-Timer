@@ -3,10 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Motivational_Timer"
+        xmlns:views="clr-namespace:Workflow_Timer.Views.MainWindowControls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Workflow Timer"
+        Height="500"
+        Width="900"
+        MinHeight="400"
+        MinWidth="650">
 
+    <Grid>
+        <views:TimerControl />
     </Grid>
+
 </Window>

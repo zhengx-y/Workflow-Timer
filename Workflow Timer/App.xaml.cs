@@ -2,7 +2,7 @@
 using System.Data;
 using System.Windows;
 
-namespace Motivational_Timer
+namespace Workflow_Timer
 {
     /// <summary>
     /// Interaction logic for App.xaml

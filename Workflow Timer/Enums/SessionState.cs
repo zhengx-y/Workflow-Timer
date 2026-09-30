@@ -1,0 +1,17 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Workflow_Timer.Enums
+{
+    public enum SessionState
+    {
+        Idle,
+        Working,
+        Break,
+        Completed,
+        Paused
+    }
+}

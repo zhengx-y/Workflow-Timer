@@ -1,0 +1,19 @@
+[
+  {
+    "Name": "Programming Session",
+    "Session": {
+      "Label": "Build Workflow Timer",
+      "WorkDuration": "00:00:30",
+      "BreakDuration": "00:00:10",
+      "Actions": [
+        {
+          "Name": "Open GitHub",
+          "ActionType": "Website",
+          "Target": "https://github.com",
+          "OffsetFromStart": "00:00:15",
+          "Enabled": true
+        }
+      ]
+    }
+  }
+]
