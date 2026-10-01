@@ -1,12 +1,42 @@
 ﻿<Window x:Class="Workflow_Timer.Views.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Workflow_Timer.Views"
-        mc:Ignorable="d"
-        Title="OverlayWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        Title="Workflow Timer Overlay"
+        Width="300"
+        Height="120"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Background="Transparent"
+        AllowsTransparency="True">
+
+    <Border Background="#EDEDED"
+            BorderBrush="#202020"
+            BorderThickness="2"
+            CornerRadius="10"
+            Padding="16">
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock x:Name="StateText"
+                       Grid.Row="0"
+                       Text="WORK"
+                       FontSize="16"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock x:Name="TimeText"
+                       Grid.Row="1"
+                       Text="00:00:00"
+                       FontSize="36"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+        </Grid>
+    </Border>
 </Window>

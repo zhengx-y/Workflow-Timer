@@ -13,12 +13,15 @@ namespace Workflow_Timer.Viewmodels
     public class MainViewModel : INotifyPropertyChanged
     {
         private readonly WorkflowTimer _workflowTimer;
-
         private readonly SchedulerService _schedulerService;
+
+        private readonly OverlayService _overlayService;
 
         private Preset? _selectedPreset;
 
         public ObservableCollection<Preset> Presets { get; }
+
+        public ObservableCollection<ScheduledActionViewModel> ScheduledActions { get; }
 
         public Preset? SelectedPreset
         {
@@ -29,6 +32,9 @@ namespace Workflow_Timer.Viewmodels
                     return;
 
                 _selectedPreset = value;
+
+                RefreshScheduledActions();
+
                 OnPropertyChanged();
             }
         }
@@ -58,19 +64,38 @@ namespace Workflow_Timer.Viewmodels
             _schedulerService = new SchedulerService(
                 new LauncherService());
 
+            _overlayService = new OverlayService();
+
+            _schedulerService.ActionTriggered += SchedulerService_ActionTriggered;
+
             Presets = new ObservableCollection<Preset>
             {
                 new Preset
                 {
                     Name = "Default",
                     Session = new TimerSession
-                    {
-                        Label = "Work",
-                        WorkDuration = TimeSpan.FromMinutes(25),
-                        BreakDuration = TimeSpan.FromMinutes(5)
-                    }
+{
+    Label = "Work",
+    WorkDuration = TimeSpan.FromSeconds(5),
+    BreakDuration = TimeSpan.FromSeconds(5),
+
+    Actions = new List<ScheduledAction>
+    {
+        new ScheduledAction
+        {
+            Name = "Test Action",
+            ActionType = ActionType.Website,
+            Target = "https://example.com",
+            OffsetFromStart = TimeSpan.FromSeconds(5),
+            Enabled = true
+        }
+    }
+}
                 }
             };
+
+            ScheduledActions =
+                new ObservableCollection<ScheduledActionViewModel>();
 
             SelectedPreset = Presets[0];
 
@@ -94,10 +119,21 @@ namespace Workflow_Timer.Viewmodels
             if (SelectedPreset == null)
                 return;
 
+            if (_workflowTimer.IsRunning)
+                return;
+
+            ResetScheduledActions();
+
             _schedulerService.LoadActions(
                 SelectedPreset.Session.Actions);
 
             _workflowTimer.Start(SelectedPreset.Session);
+
+            _overlayService.Update(
+                _workflowTimer.State.ToString(),
+                _workflowTimer.RemainingTime);
+
+            _overlayService.Show();
 
             NotifyTimerProperties();
         }
@@ -120,13 +156,30 @@ namespace Workflow_Timer.Viewmodels
         {
             _workflowTimer.Stop();
             _schedulerService.Reset();
+            _overlayService.Hide();
+
+            ResetScheduledActions();
 
             NotifyTimerProperties();
         }
 
         private void RepeatTimer()
         {
+            ResetScheduledActions();
+
+            if (SelectedPreset != null)
+            {
+                _schedulerService.LoadActions(
+                    SelectedPreset.Session.Actions);
+            }
+
             _workflowTimer.Repeat();
+
+            _overlayService.Update(
+                _workflowTimer.State.ToString(),
+                _workflowTimer.RemainingTime);
+
+            _overlayService.Show();
 
             NotifyTimerProperties();
         }
@@ -155,14 +208,77 @@ namespace Workflow_Timer.Viewmodels
             _schedulerService.Check(
                 _workflowTimer.WorkElapsedTime);
 
+            _overlayService.Update(
+                _workflowTimer.State.ToString(),
+                _workflowTimer.RemainingTime);
+
             NotifyTimerProperties();
         }
 
         private void WorkflowTimer_SessionCompleted(
-            object? sender,
-            EventArgs e)
+    object? sender,
+    EventArgs e)
         {
+            _overlayService.Update(
+                _workflowTimer.State.ToString(),
+                _workflowTimer.RemainingTime);
+
+            _overlayService.Blink();
+
             NotifyTimerProperties();
+        }
+
+        private void SchedulerService_ActionTriggered(
+            object? sender,
+            ScheduledAction action)
+        {
+            var actionViewModel =
+                FindScheduledActionViewModel(action);
+
+            if (actionViewModel == null)
+                return;
+
+            actionViewModel.MarkTriggered();
+
+            OnPropertyChanged(nameof(ScheduledActions));
+        }
+
+        private void RefreshScheduledActions()
+        {
+            ScheduledActions.Clear();
+
+            if (SelectedPreset == null)
+                return;
+
+            foreach (var action in SelectedPreset.Session.Actions)
+            {
+                ScheduledActions.Add(
+                    new ScheduledActionViewModel(action));
+            }
+
+            OnPropertyChanged(nameof(ScheduledActions));
+        }
+
+        private void ResetScheduledActions()
+        {
+            foreach (var action in ScheduledActions)
+            {
+                action.Reset();
+            }
+
+            OnPropertyChanged(nameof(ScheduledActions));
+        }
+
+        private ScheduledActionViewModel? FindScheduledActionViewModel(
+            ScheduledAction action)
+        {
+            foreach (var item in ScheduledActions)
+            {
+                if (ReferenceEquals(item.Action, action))
+                    return item;
+            }
+
+            return null;
         }
 
         private void LoadPreset()
@@ -171,6 +287,7 @@ namespace Workflow_Timer.Viewmodels
                 return;
 
             StopTimer();
+            RefreshScheduledActions();
         }
 
         private void SavePreset()

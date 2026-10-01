@@ -1,4 +1,7 @@
-﻿using Workflow_Timer.Models;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Workflow_Timer.Models;
 using Workflow_Timer.Services.System;
 
 namespace Workflow_Timer.Services.TimerEngine
@@ -11,12 +14,10 @@ namespace Workflow_Timer.Services.TimerEngine
 
         private readonly HashSet<ScheduledAction> _executedActions = new();
 
-
         public SchedulerService(LauncherService launcherService)
         {
             _launcherService = launcherService;
         }
-
 
         public void LoadActions(IEnumerable<ScheduledAction> actions)
         {
@@ -27,7 +28,6 @@ namespace Workflow_Timer.Services.TimerEngine
             _executedActions.Clear();
         }
 
-
         public void Check(TimeSpan elapsedTime)
         {
             foreach (var action in _actions)
@@ -35,12 +35,15 @@ namespace Workflow_Timer.Services.TimerEngine
                 if (_executedActions.Contains(action))
                     continue;
 
-
                 if (elapsedTime >= action.OffsetFromStart)
                 {
                     _launcherService.Launch(action);
 
                     _executedActions.Add(action);
+
+                    ActionTriggered?.Invoke(
+                        this,
+                        action);
                 }
             }
         }
