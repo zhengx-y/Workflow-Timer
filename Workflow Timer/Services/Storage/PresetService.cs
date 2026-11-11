@@ -1,30 +1,29 @@
-﻿using Workflow_Timer.Helpers;
-using Workflow_Timer.Models;
-using Workflow_Timer.Services.Storage;
+﻿using Workflow_Timer.Models;
 
-public class PresetService
+namespace Workflow_Timer.Services.Storage
 {
-    private readonly AppDataPathService _paths;
-
-
-    public PresetService(AppDataPathService paths)
+    public class PresetService
     {
-        _paths = paths;
-    }
+        private readonly AppDataPathService _paths;
+        private readonly JsonStorageService _storage;
 
+        public PresetService(AppDataPathService paths)
+        {
+            _paths = paths;
+            _storage = new JsonStorageService();
+        }
 
-    public List<Preset> LoadPresets()
-    {
-        return JsonHelper.Load<List<Preset>>(
-            _paths.PresetsPath)
-            ?? new();
-    }
+        public List<Preset> LoadPresets()
+        {
+            var presets = _storage.Load<List<Preset>>(
+                _paths.PresetsPath);
 
+            return presets ?? new List<Preset>();
+        }
 
-    public void SavePresets(List<Preset> presets)
-    {
-        JsonHelper.Save(
-            _paths.PresetsPath,
-            presets);
+        public void SavePresets(List<Preset> presets)
+        {
+            _storage.Save(_paths.PresetsPath, presets);
+        }
     }
 }

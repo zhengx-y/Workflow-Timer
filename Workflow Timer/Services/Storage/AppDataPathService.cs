@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 
 namespace Workflow_Timer.Services.Storage
 {
@@ -27,6 +27,10 @@ namespace Workflow_Timer.Services.Storage
         public string HistoryPath =>
             CreateFolder("history")
             + "\\history.json";
+
+
+        public string RecordsPath =>
+            global::System.IO.Path.Combine(CreateFolder("history"), "records.json");
 
 
         public string SettingsPath =>
