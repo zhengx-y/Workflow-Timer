@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Windows;
 using Workflow_Timer.Views;
 
 namespace Workflow_Timer.Services.TimerEngine
@@ -7,50 +8,29 @@ namespace Workflow_Timer.Services.TimerEngine
     {
         private OverlayWindow? _window;
 
+        public event EventHandler? PauseRequested;
+        public event EventHandler? ResumeRequested;
+
         public void Show()
         {
             EnsureWindow();
-
             if (!_window!.IsVisible)
                 _window.Show();
-
             _window.BringToFront();
         }
 
-        public void Hide()
-        {
-            if (_window == null)
-                return;
+        public void Hide() => _window?.Hide();
 
-            _window.Hide();
-        }
-
-        public void Update(
-            string state,
-            TimeSpan remainingTime)
+        public void Update(string state, TimeSpan remainingTime,
+            string? nextActionName = null, TimeSpan? nextActionRemaining = null)
         {
             EnsureWindow();
-
-            _window!.UpdateDisplay(
-                state,
-                remainingTime);
+            _window!.UpdateDisplay(state, remainingTime,
+                nextActionName, nextActionRemaining);
         }
 
-        public void Blink()
-        {
-            if (_window == null)
-                return;
-
-            _window.Blink();
-        }
-
-        public void BringToFront()
-        {
-            if (_window == null)
-                return;
-
-            _window.BringToFront();
-        }
+        public void Blink() => _window?.Blink();
+        public void BringToFront() => _window?.BringToFront();
 
         private void EnsureWindow()
         {
@@ -58,11 +38,23 @@ namespace Workflow_Timer.Services.TimerEngine
                 return;
 
             _window = new OverlayWindow();
-
+            _window.PauseRequested += Window_PauseRequested;
+            _window.ResumeRequested += Window_ResumeRequested;
             _window.Closed += (_, _) =>
             {
-                _window = null;
+                if (_window != null)
+                {
+                    _window.PauseRequested -= Window_PauseRequested;
+                    _window.ResumeRequested -= Window_ResumeRequested;
+                    _window = null;
+                }
             };
         }
+
+        private void Window_PauseRequested(object? sender, EventArgs e) =>
+            PauseRequested?.Invoke(this, EventArgs.Empty);
+
+        private void Window_ResumeRequested(object? sender, EventArgs e) =>
+            ResumeRequested?.Invoke(this, EventArgs.Empty);
     }
 }

@@ -29,6 +29,7 @@ namespace Workflow_Timer.Viewmodels
         private readonly HistoryService _historyService;
         private DateTime _workStartedAt;
         private bool _workRecorded;
+        private TimeSpan _lastOverlayRemaining;
 
         private Preset? _selectedPreset;
         private ScheduledActionViewModel? _selectedScheduledAction;
@@ -164,6 +165,25 @@ namespace Workflow_Timer.Viewmodels
         public bool IsRunning =>
             _workflowTimer.IsRunning;
 
+        // Button visibility is derived from the actual session state.
+        public bool CanStartTimer =>
+            State == SessionState.Idle || State == SessionState.Completed;
+
+        public bool HasActiveTimer =>
+            State == SessionState.Working ||
+            State == SessionState.Break ||
+            State == SessionState.Paused;
+
+        public bool CanPauseTimer =>
+            State == SessionState.Working || State == SessionState.Break;
+
+        public bool CanResumeTimer => State == SessionState.Paused;
+
+        public bool CanRepeatTimer => HasActiveTimer || State == SessionState.Completed;
+
+        public bool CanExtendTimer =>
+            State == SessionState.Working || State == SessionState.Break;
+
         // Keep settings visible, but read-only during work, break, or pause.
         public bool CanEditSettings =>
             _workflowTimer.State != SessionState.Working &&
@@ -188,6 +208,8 @@ namespace Workflow_Timer.Viewmodels
                 new LauncherService());
 
             _overlayService = new OverlayService();
+            _overlayService.PauseRequested += (_, _) => PauseTimer();
+            _overlayService.ResumeRequested += (_, _) => ResumeTimer();
 
             _schedulerService.ActionTriggered += SchedulerService_ActionTriggered;
 
@@ -269,6 +291,9 @@ namespace Workflow_Timer.Viewmodels
 
         private void StartTimer()
         {
+            if (!CanStartTimer)
+                return;
+
             if (SelectedPreset == null)
                 return;
 
@@ -285,9 +310,7 @@ namespace Workflow_Timer.Viewmodels
 
             _workflowTimer.Start(SelectedPreset.Session);
 
-            _overlayService.Update(
-                _workflowTimer.State.ToString(),
-                _workflowTimer.RemainingTime);
+            UpdateOverlay();
 
             _overlayService.Show();
 
@@ -296,20 +319,31 @@ namespace Workflow_Timer.Viewmodels
 
         private void PauseTimer()
         {
+            if (!CanPauseTimer)
+                return;
+
             _workflowTimer.Pause();
+            UpdateOverlay();
 
             NotifyTimerProperties();
         }
 
         private void ResumeTimer()
         {
+            if (!CanResumeTimer)
+                return;
+
             _workflowTimer.Resume();
+            UpdateOverlay();
 
             NotifyTimerProperties();
         }
 
         private void StopTimer()
         {
+            if (!HasActiveTimer)
+                return;
+
             RecordWorkIfNeeded(false);
             _workflowTimer.Stop();
             _schedulerService.Reset();
@@ -322,6 +356,9 @@ namespace Workflow_Timer.Viewmodels
 
         private void RepeatTimer()
         {
+            if (!CanRepeatTimer)
+                return;
+
             // Repeat discards the old countdown, so persist its work first.
             RecordWorkIfNeeded(false);
             ResetScheduledActions();
@@ -340,9 +377,7 @@ namespace Workflow_Timer.Viewmodels
                 _workRecorded = false;
             }
 
-            _overlayService.Update(
-                _workflowTimer.State.ToString(),
-                _workflowTimer.RemainingTime);
+            UpdateOverlay();
 
             _overlayService.Show();
 
@@ -351,6 +386,9 @@ namespace Workflow_Timer.Viewmodels
 
         private void ExtendTimer(object? value)
         {
+            if (!CanExtendTimer)
+                return;
+
             if (value == null)
                 return;
 
@@ -366,6 +404,35 @@ namespace Workflow_Timer.Viewmodels
             NotifyTimerProperties();
         }
 
+        private void UpdateOverlay()
+        {
+            // WorkflowTimer.RemainingTime is zero in Paused state; keep the
+            // last known countdown on-screen until the timer resumes.
+            TimeSpan remaining = _workflowTimer.State == SessionState.Paused
+                ? _lastOverlayRemaining : _workflowTimer.RemainingTime;
+            if (_workflowTimer.State != SessionState.Paused)
+                _lastOverlayRemaining = remaining;
+
+            string? nextName = null;
+            TimeSpan? nextRemaining = null;
+            if (_workflowTimer.State == SessionState.Working ||
+                (_workflowTimer.State == SessionState.Paused &&
+                 _workflowTimer.CurrentSession != null &&
+                 !_workRecorded))
+            {
+                var next = _schedulerService.GetNextPendingAction();
+                if (next != null)
+                {
+                    nextName = next.Name;
+                    nextRemaining = next.OffsetFromStart - _workflowTimer.WorkElapsedTime;
+                    if (nextRemaining < TimeSpan.Zero)
+                        nextRemaining = TimeSpan.Zero;
+                }
+            }
+            _overlayService.Update(_workflowTimer.State.ToString(),
+                remaining, nextName, nextRemaining);
+        }
+
         private void WorkflowTimer_Tick(
     object? sender,
     EventArgs e)
@@ -373,9 +440,7 @@ namespace Workflow_Timer.Viewmodels
             _schedulerService.Check(
                 _workflowTimer.WorkElapsedTime);
 
-            _overlayService.Update(
-                _workflowTimer.State.ToString(),
-                _workflowTimer.RemainingTime);
+            UpdateOverlay();
 
             NotifyTimerProperties();
         }
@@ -419,9 +484,7 @@ namespace Workflow_Timer.Viewmodels
     object? sender,
     EventArgs e)
         {
-            _overlayService.Update(
-                _workflowTimer.State.ToString(),
-                _workflowTimer.RemainingTime);
+            UpdateOverlay();
 
             _overlayService.Blink();
 
@@ -883,6 +946,12 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(State));
             OnPropertyChanged(nameof(IsRunning));
             OnPropertyChanged(nameof(CanEditSettings));
+            OnPropertyChanged(nameof(CanStartTimer));
+            OnPropertyChanged(nameof(HasActiveTimer));
+            OnPropertyChanged(nameof(CanPauseTimer));
+            OnPropertyChanged(nameof(CanResumeTimer));
+            OnPropertyChanged(nameof(CanRepeatTimer));
+            OnPropertyChanged(nameof(CanExtendTimer));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

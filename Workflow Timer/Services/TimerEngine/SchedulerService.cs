@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Workflow_Timer.Models;
@@ -47,6 +47,13 @@ namespace Workflow_Timer.Services.TimerEngine
                 }
             }
         }
+
+        // Earliest enabled action that has not yet been launched.
+        // OrderBy is stable when multiple actions have the same offset.
+        public ScheduledAction? GetNextPendingAction() =>
+            _actions.Where(action => !_executedActions.Contains(action))
+                .OrderBy(action => action.OffsetFromStart)
+                .FirstOrDefault();
 
         public event EventHandler<ScheduledAction>? ActionTriggered;
 
