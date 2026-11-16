@@ -3,6 +3,7 @@ using System.IO;
 using System.Collections.Generic;
 using Workflow_Timer.Enums;
 using Workflow_Timer.Models;
+using Workflow_Timer.Helpers;
 
 namespace Workflow_Timer.Services.Storage
 {
@@ -66,7 +67,7 @@ namespace Workflow_Timer.Services.Storage
                 throw new InvalidDataException("Hotkey settings are missing.");
 
             var actions = new HashSet<HotkeyAction>();
-            var gestures = new HashSet<(uint Modifiers, string Key)>();
+            var gestures = new HashSet<(uint Modifiers, uint VirtualKey)>();
             foreach (var binding in hotkeys)
             {
                 if (binding == null || !Enum.IsDefined(binding.Action) || !actions.Add(binding.Action))
@@ -75,11 +76,15 @@ namespace Workflow_Timer.Services.Storage
                     !Enum.IsDefined(binding.Modifier2) ||
                     binding.Modifier1 == binding.Modifier2)
                     throw new InvalidDataException($"{binding.ActionName}: choose two different modifiers or None for the second.");
-                if (binding.Key == null || (binding.Key.Length != 0 &&
-                    (binding.Key.Length != 1 || binding.Key[0] < 'A' || binding.Key[0] > 'Z')))
-                    throw new InvalidDataException($"{binding.ActionName}: use one letter A–Z or leave the key blank.");
-                if (binding.IsAssigned && !gestures.Add((binding.ModifierMask, binding.Key)))
-                    throw new InvalidDataException($"Duplicate hotkey: {binding.Gesture}.");
+                if (binding.Key == null)
+                    throw new InvalidDataException($"{binding.ActionName}: select a supported key or leave it blank.");
+                if (binding.IsAssigned)
+                {
+                    if (!HotkeyKeyHelper.TryGetVirtualKey(binding.Key, out uint virtualKey))
+                        throw new InvalidDataException($"{binding.ActionName}: unsupported key {binding.Key}.");
+                    if (!gestures.Add((binding.ModifierMask, virtualKey)))
+                        throw new InvalidDataException($"Duplicate hotkey: {binding.Gesture}.");
+                }
             }
 
             if (actions.Count != Enum.GetValues<HotkeyAction>().Length)

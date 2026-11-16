@@ -47,13 +47,13 @@
                 </GroupBox>
                 <GroupBox Header="Global keyboard shortcuts" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Choose one or two different modifiers and a letter A–Z. Clear the letter to disable a shortcut. Windows may reserve some combinations."
+                        <TextBlock Text="Choose one or two different modifiers, click the Key field and press a key without modifiers. Backspace clears it. Letters, numbers, numpad, arrows, navigation, F1–F11, Space and layout-specific punctuation are supported. Windows may reserve some combinations."
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <Grid Margin="0,0,0,5">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="54"/>
+                                <ColumnDefinition Width="106"/>
                                 <ColumnDefinition Width="2*"/>
                             </Grid.ColumnDefinitions>
                             <TextBlock Text="Modifier 1" FontWeight="SemiBold"/>
@@ -68,7 +68,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="54"/>
+                                            <ColumnDefinition Width="106"/>
                                             <ColumnDefinition Width="2*"/>
                                         </Grid.ColumnDefinitions>
                                         <ComboBox Grid.Column="0" Margin="0,0,6,0"
@@ -77,11 +77,11 @@
                                         <ComboBox Grid.Column="1" Margin="0,0,6,0"
                                                   ItemsSource="{Binding SecondModifiers, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   SelectedItem="{Binding Modifier2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                        <TextBox Grid.Column="2" Margin="0,0,6,0" MaxLength="1"
-                                                 CharacterCasing="Upper" HorizontalContentAlignment="Center"
-                                                 Text="{Binding Key, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 PreviewTextInput="HotkeyKey_PreviewTextInput"
-                                                 DataObject.Pasting="HotkeyKey_Pasting"/>
+                                        <TextBox x:Name="HotkeyKeyBox" Grid.Column="2" Margin="0,0,6,0"
+                                                 IsReadOnly="True" HorizontalContentAlignment="Center"
+                                                 Text="{Binding DisplayKey, Mode=OneWay}"
+                                                 PreviewKeyDown="HotkeyKey_PreviewKeyDown"
+                                                 ToolTip="Press a key. Backspace clears the shortcut."/>
                                         <TextBlock Grid.Column="3" Text="{Binding ActionName}" TextWrapping="Wrap"
                                                    VerticalAlignment="Center"/>
                                     </Grid>

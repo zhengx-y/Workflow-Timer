@@ -5,6 +5,7 @@ using global::System.Runtime.InteropServices;
 using global::System.Windows.Interop;
 using Workflow_Timer.Enums;
 using Workflow_Timer.Models;
+using Workflow_Timer.Helpers;
 
 namespace Workflow_Timer.Services.System
 {
@@ -26,10 +27,10 @@ namespace Workflow_Timer.Services.System
             _source.AddHook(WindowHook);
         }
 
-        // The modifier mask and ASCII virtual-key code uniquely identify the
+        // The modifier mask and Windows virtual-key code uniquely identify the
         // combination, regardless of the order of the two modifiers.
         private static int Id(HotkeyBinding binding) =>
-            (int)((binding.ModifierMask << 8) | (uint)binding.Key[0]);
+            (int)((binding.ModifierMask << 8) | HotkeyKeyHelper.GetVirtualKey(binding.Key));
 
         public List<HotkeyBinding> Snapshot() =>
             _registered.Values.Select(binding => binding.Copy()).ToList();
@@ -109,7 +110,8 @@ namespace Workflow_Timer.Services.System
 
         private bool TryRegister(int id, HotkeyBinding binding, out string error)
         {
-            if (RegisterHotKey(_handle, id, binding.ModifierMask | ModNoRepeat, (uint)binding.Key[0]))
+            if (RegisterHotKey(_handle, id, binding.ModifierMask | ModNoRepeat,
+                HotkeyKeyHelper.GetVirtualKey(binding.Key)))
             {
                 error = string.Empty;
                 return true;

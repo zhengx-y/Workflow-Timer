@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Controls;
+using System.Windows.Media;
 using System.Linq;
 using Workflow_Timer.Commands;
 using Workflow_Timer.Enums;
 using Workflow_Timer.Models;
 using Workflow_Timer.Services.Storage;
+using Workflow_Timer.Helpers;
 
 namespace Workflow_Timer.Views
 {
@@ -36,6 +39,24 @@ namespace Workflow_Timer.Views
             DataContext = new SettingsCommands(Save, () => DialogResult = false,
                 () => Populate(new Settings()));
             Populate(currentSettings);
+            InputLanguageManager.Current.InputLanguageChanged += InputLanguageChanged;
+            Activated += (_, _) => RefreshKeyLabels(HotkeysList);
+            Closed += (_, _) =>
+                InputLanguageManager.Current.InputLanguageChanged -= InputLanguageChanged;
+        }
+
+        private void InputLanguageChanged(object sender, InputLanguageEventArgs e)
+        {
+            // Refresh after Windows has switched the active input layout.
+            Dispatcher.BeginInvoke(new Action(() => RefreshKeyLabels(HotkeysList)));
+        }
+
+        private static void RefreshKeyLabels(DependencyObject parent)
+        {
+            if (parent is TextBox box && box.Name == "HotkeyKeyBox")
+                box.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+                RefreshKeyLabels(VisualTreeHelper.GetChild(parent, i));
         }
 
         private void Populate(Settings settings)
@@ -82,19 +103,30 @@ namespace Workflow_Timer.Views
             DialogResult = true;
         }
 
-        private static bool IsLetter(string text) =>
-            text.Length == 1 && ((text[0] >= 'A' && text[0] <= 'Z') ||
-                (text[0] >= 'a' && text[0] <= 'z'));
-
-        private void HotkeyKey_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        private void HotkeyKey_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            e.Handled = !IsLetter(e.Text);
-        }
+            if (sender is not TextBox box || box.DataContext is not HotkeyBinding binding ||
+                Keyboard.Modifiers != ModifierKeys.None)
+                return;
 
-        private void HotkeyKey_Pasting(object sender, DataObjectPastingEventArgs e)
-        {
-            if (e.DataObject.GetData(DataFormats.UnicodeText) is not string text || !IsLetter(text))
-                e.CancelCommand();
+            Key key = e.Key == Key.DeadCharProcessed ? e.DeadCharProcessedKey : e.Key;
+
+            // Leave normal dialog navigation (Tab, Enter, Escape) untouched.
+            if (key == Key.Tab || key == Key.Enter || key == Key.Escape)
+                return;
+
+            string name;
+            if (key == Key.Back)
+                name = string.Empty;
+            else if (!HotkeyKeyHelper.TryGetName(key, out name))
+            {
+                e.Handled = true;
+                return;
+            }
+
+            e.Handled = true;
+            binding.Key = name;
+            box.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
         }
 
         private void ClearHotkeys_Click(object sender, RoutedEventArgs e)

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Workflow_Timer.Enums;
+using Workflow_Timer.Helpers;
 
 namespace Workflow_Timer.Models
 {
@@ -10,6 +11,9 @@ namespace Workflow_Timer.Models
         public HotkeyModifier Modifier1 { get; set; } = HotkeyModifier.Ctrl;
         public HotkeyModifier Modifier2 { get; set; } = HotkeyModifier.None;
         public string Key { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public string DisplayKey => HotkeyKeyHelper.GetDisplayName(Key);
 
         [JsonIgnore]
         public string ActionName => Action switch
@@ -37,7 +41,7 @@ namespace Workflow_Timer.Models
 
         [JsonIgnore]
         public string Gesture => Modifier2 == HotkeyModifier.None
-            ? $"{Modifier1} + {Key}" : $"{Modifier1} + {Modifier2} + {Key}";
+            ? $"{Modifier1} + {DisplayKey}" : $"{Modifier1} + {Modifier2} + {DisplayKey}";
 
         public HotkeyBinding Copy() => (HotkeyBinding)MemberwiseClone();
 
