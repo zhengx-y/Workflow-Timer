@@ -1,0 +1,86 @@
+<UserControl x:Class="Workflow_Timer.Views.MainWindowControls.TodoControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="TodoVisibility"/>
+        <Style x:Key="TodoListStyle" TargetType="ListBox">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+            <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+            <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True"/>
+            <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling"/>
+            <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="0"/>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <DataTemplate x:Key="TodoItemTemplate">
+            <Border BorderBrush="#D4D4D4" BorderThickness="1" CornerRadius="4" Padding="6" Margin="3">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox IsChecked="{Binding IsCompleted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              VerticalAlignment="Center" Margin="0,0,5,0" ToolTip="Mark complete or reopen"/>
+                    <TextBox x:Name="TaskTitle" Grid.Column="1" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             FontWeight="SemiBold" TextWrapping="Wrap" VerticalContentAlignment="Center"
+                             Margin="0,0,4,0" ToolTip="Task title"/>
+                    <Button Grid.Column="2" Content="×" Padding="6,1" ToolTip="Delete task"
+                            Command="{Binding DataContext.Commands.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
+                            CommandParameter="{Binding}"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,3,0,0"
+                             Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="22" MinLines="1"
+                             VerticalScrollBarVisibility="Auto" ToolTip="Task description"/>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </UserControl.Resources>
+    <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="6" Padding="8">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="3*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <DockPanel Margin="0,0,0,8">
+                <Button DockPanel.Dock="Right" Content="+" FontSize="20" Padding="10,0"
+                        ToolTip="Create task" IsEnabled="{Binding CanEditTasks}" Click="AddTask_Click"/>
+                <TextBlock Text="To-Do List" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+            </DockPanel>
+            <StackPanel Grid.Row="1" Margin="0,0,0,10">
+                <TextBlock Text="Search titles" Foreground="Gray" FontSize="11"/>
+                <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinHeight="26"/>
+            </StackPanel>
+            <TextBlock Grid.Row="2" Text="Active tasks" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <ListBox x:Name="ActiveList" Grid.Row="3" ItemsSource="{Binding ActiveTasks}"
+                     Style="{StaticResource TodoListStyle}" ItemTemplate="{StaticResource TodoItemTemplate}"
+                     IsEnabled="{Binding CanEditTasks}"/>
+            <TextBlock Grid.Row="4" Text="Completed tasks" FontWeight="SemiBold" Margin="0,10,0,4"/>
+            <ListBox Grid.Row="5" ItemsSource="{Binding CompletedTasks}"
+                     Style="{StaticResource TodoListStyle}" ItemTemplate="{StaticResource TodoItemTemplate}"
+                     IsEnabled="{Binding CanEditTasks}"/>
+            <StackPanel Grid.Row="6" Margin="0,6,0,0">
+                <TextBlock Text="{Binding StorageStatus}" TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                <Button Content="Retry save" Command="{Binding Commands.RetrySaveCommand}" Margin="0,4,0,0"
+                        Visibility="{Binding HasUnsavedChanges, Converter={StaticResource TodoVisibility}}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

@@ -37,6 +37,9 @@ namespace Workflow_Timer.Services.Storage
             CreateFolder("settings")
             + "\\settings.json";
 
+        public string TasksPath =>
+            global::System.IO.Path.Combine(CreateFolder("tasks"), "tasks.json");
+
 
 
         private string CreateFolder(string folder)

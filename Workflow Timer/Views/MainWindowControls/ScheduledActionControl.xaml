@@ -15,6 +15,7 @@
                      MaxHeight="180" MinHeight="65"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                     ScrollViewer.CanContentScroll="False"
                      HorizontalContentAlignment="Left"
                      Margin="0,0,0,10">
                 <ListBox.ItemTemplate>
@@ -57,10 +58,9 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="110" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="110" />
-                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -68,17 +68,17 @@
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Name"
                            VerticalAlignment="Center" Margin="0,0,8,8" />
-                <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,12,8"
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"
                          Text="{Binding ActionName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <TextBlock Grid.Row="0" Grid.Column="2" Text="Type"
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Type"
                            VerticalAlignment="Center" Margin="0,0,8,8" />
-                <ComboBox Grid.Row="0" Grid.Column="3" Margin="0,0,0,8"
+                <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"
                           ItemsSource="{Binding ActionTypes}"
                           SelectedItem="{Binding SelectedActionType, Mode=TwoWay}" />
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Target"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Target"
                            VerticalAlignment="Center" Margin="0,0,8,8" />
-                <Grid Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Margin="0,0,0,8">
+                <Grid Grid.Row="2" Grid.Column="1" Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -91,14 +91,20 @@
                             ToolTip="Select an executable, file or folder using Windows Explorer." />
                 </Grid>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Offset (HH:MM:SS)"
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Offset (HH:MM:SS)"
                            VerticalAlignment="Center" Margin="0,0,8,8" />
-                <TextBox Grid.Row="2" Grid.Column="1" Margin="0,0,12,8"
+                <Grid Grid.Row="3" Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0" Margin="0,0,12,8"
                          Text="{Binding ActionOffsetText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                <CheckBox Grid.Row="2" Grid.Column="3" Content="Enabled"
+                <CheckBox Grid.Column="1" Content="Enabled"
                           IsChecked="{Binding ActionEnabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                           ToolTip="For an existing action, click Update Selected to save this change."
                           VerticalAlignment="Center" Margin="0,0,0,8" />
+                </Grid>
             </Grid>
 
             <TextBlock Text="For an existing action, click Update Selected to save edits (including Enabled)."

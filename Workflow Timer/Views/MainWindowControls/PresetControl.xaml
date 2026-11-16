@@ -58,7 +58,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
                 <Grid.RowDefinitions>
@@ -91,7 +91,8 @@
                 <TextBox Grid.Row="1"
                          Grid.Column="1"
                          MinHeight="28"
-                         Margin="0,0,16,8"
+                         MinWidth="72"
+                         Margin="0,0,8,8"
                          Text="{Binding PresetWorkDraft,
                                         Mode=TwoWay,
                                         UpdateSourceTrigger=PropertyChanged}"/>
@@ -105,6 +106,7 @@
                 <TextBox Grid.Row="1"
                          Grid.Column="3"
                          MinHeight="28"
+                         MinWidth="72"
                          Margin="0,0,0,8"
                          Text="{Binding PresetBreakDraft,
                                         Mode=TwoWay,

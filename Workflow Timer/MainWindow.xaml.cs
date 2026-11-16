@@ -30,6 +30,114 @@ namespace Workflow_Timer
         private string? _hotkeyWarning;
         private bool _reminderFocusDeferred;
         private bool _closing;
+        private const double LeftPanelMin = 220;
+        private const double LeftPanelMax = 480;
+        private const double RightPanelMin = 320;
+        private const double RightPanelMax = 550;
+        private const double CenterPanelMin = 440;
+        private const double SplitterWidth = 8;
+        private double _leftExpandedWidth = LeftPanelMin;
+        private double _rightExpandedWidth = RightPanelMin;
+        private bool _leftCollapsed;
+        private bool _rightCollapsed;
+
+        private void ToggleLeftPanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_leftCollapsed)
+            {
+                _leftExpandedWidth = Math.Clamp(LeftPanelColumn.ActualWidth, LeftPanelMin, LeftPanelMax);
+                _leftCollapsed = true;
+                HidePanel(LeftPanelColumn, LeftSplitterColumn, LeftPanel, LeftSplitter);
+                LeftPanelButton.Content = "Show tasks";
+            }
+            else
+            {
+                _leftCollapsed = false;
+                ShowPanel(LeftPanelColumn, LeftSplitterColumn, LeftPanel, LeftSplitter,
+                    LeftPanelMin, LeftPanelMax, _leftExpandedWidth);
+                LeftPanelButton.Content = "Hide tasks";
+                FitSidePanels(preferRight: false);
+            }
+        }
+
+        private void ToggleRightPanel_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_rightCollapsed)
+            {
+                _rightExpandedWidth = Math.Clamp(RightPanelColumn.ActualWidth, RightPanelMin, RightPanelMax);
+                _rightCollapsed = true;
+                HidePanel(RightPanelColumn, RightSplitterColumn, RightPanel, RightSplitter);
+                RightPanelButton.Content = "Show history / motivation";
+            }
+            else
+            {
+                _rightCollapsed = false;
+                ShowPanel(RightPanelColumn, RightSplitterColumn, RightPanel, RightSplitter,
+                    RightPanelMin, RightPanelMax, _rightExpandedWidth);
+                RightPanelButton.Content = "Hide history / motivation";
+                FitSidePanels(preferRight: true);
+            }
+        }
+
+        private static void HidePanel(ColumnDefinition column, ColumnDefinition divider,
+            FrameworkElement panel, GridSplitter splitter)
+        {
+            panel.Visibility = Visibility.Collapsed;
+            splitter.Visibility = Visibility.Collapsed;
+            column.MinWidth = 0;
+            column.MaxWidth = 0;
+            column.Width = new GridLength(0);
+            divider.Width = new GridLength(0);
+        }
+
+        private static void ShowPanel(ColumnDefinition column, ColumnDefinition divider,
+            FrameworkElement panel, GridSplitter splitter, double minimum, double maximum, double width)
+        {
+            column.MaxWidth = maximum;
+            column.MinWidth = minimum;
+            column.Width = new GridLength(Math.Clamp(width, minimum, maximum));
+            divider.Width = new GridLength(SplitterWidth);
+            panel.Visibility = Visibility.Visible;
+            splitter.Visibility = Visibility.Visible;
+        }
+
+        private void PanelGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (e.WidthChanged && LeftPanelColumn != null && RightPanelColumn != null)
+                FitSidePanels(preferRight: true);
+        }
+
+        // Keep the central column reachable when the window shrinks or a panel reopens.
+        // GridSplitter itself respects the center and side-column minima while dragging.
+        private void FitSidePanels(bool preferRight)
+        {
+            if (PanelGrid.ActualWidth <= 0) return;
+            double left = _leftCollapsed ? 0 : LeftPanelColumn.Width.Value;
+            double right = _rightCollapsed ? 0 : RightPanelColumn.Width.Value;
+            double available = PanelGrid.ActualWidth - CenterPanelMin -
+                (_leftCollapsed ? 0 : SplitterWidth) - (_rightCollapsed ? 0 : SplitterWidth);
+            double excess = Math.Max(0, left + right - available);
+            if (excess <= 0) return;
+
+            void Shrink(ColumnDefinition column, double minimum, ref double width)
+            {
+                double amount = Math.Min(excess, Math.Max(0, width - minimum));
+                if (amount <= 0) return;
+                width -= amount;
+                excess -= amount;
+                column.Width = new GridLength(width);
+            }
+            if (preferRight)
+            {
+                if (!_rightCollapsed) Shrink(RightPanelColumn, RightPanelMin, ref right);
+                if (!_leftCollapsed) Shrink(LeftPanelColumn, LeftPanelMin, ref left);
+            }
+            else
+            {
+                if (!_leftCollapsed) Shrink(LeftPanelColumn, LeftPanelMin, ref left);
+                if (!_rightCollapsed) Shrink(RightPanelColumn, RightPanelMin, ref right);
+            }
+        }
 
         public MainWindow()
         {
@@ -58,6 +166,12 @@ namespace Workflow_Timer
             if (!e.Cancel && DataContext is MainViewModel pending &&
                 !pending.ResolvePendingEdits())
                 e.Cancel = true;
+            if (!e.Cancel && DataContext is MainViewModel tasks && !tasks.Todo.TrySave())
+            {
+                MessageBox.Show(this, "Task changes could not be saved. Retry saving before closing.",
+                    "Unsaved tasks", MessageBoxButton.OK, MessageBoxImage.Warning);
+                e.Cancel = true;
+            }
             if (!e.Cancel)
             {
                 _closing = true;

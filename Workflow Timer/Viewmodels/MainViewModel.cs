@@ -31,6 +31,7 @@ namespace Workflow_Timer.Viewmodels
         private readonly SettingsService _settingsService;
         private readonly StartupService _startupService = new();
         private readonly FocusReminderService _focusReminder = new();
+        public TodoViewModel Todo { get; }
         private readonly MotivationService _motivationService = new();
         public string MotivationQuoteText { get; private set; } = string.Empty;
         public ICommand NextMotivationQuoteCommand { get; }
@@ -323,6 +324,7 @@ namespace Workflow_Timer.Viewmodels
 
         public MainViewModel()
         {
+            Todo = new TodoViewModel(new TodoService(new AppDataPathService()));
             NextMotivationQuoteCommand = new RelayCommand(NextMotivationQuote);
             NextMotivationQuote();
             _settingsService = new SettingsService(new AppDataPathService());

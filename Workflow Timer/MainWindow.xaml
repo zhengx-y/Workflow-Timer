@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:Workflow_Timer.Views.MainWindowControls"
         Title="Workflow Timer"
-        Width="1000" Height="740"
-        MinWidth="1000" MinHeight="550">
+        Width="1040" Height="740"
+        MinWidth="1040" MinHeight="550">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="ReminderVisibility"/>
@@ -13,6 +13,10 @@
         <DockPanel DockPanel.Dock="Top" Margin="10,10,10,0" LastChildFill="False">
             <Button DockPanel.Dock="Right" Content="Settings..." Padding="12,5"
                     IsEnabled="{Binding CanEditSettings}" Click="SettingsButton_Click"/>
+            <Button x:Name="RightPanelButton" DockPanel.Dock="Right" Content="Hide history / motivation"
+                    Margin="0,0,8,0" Padding="10,5" Click="ToggleRightPanel_Click"/>
+            <Button x:Name="LeftPanelButton" DockPanel.Dock="Left" Content="Hide tasks"
+                    Padding="10,5" Click="ToggleLeftPanel_Click"/>
         </DockPanel>
         <Border DockPanel.Dock="Top" Margin="10,8,10,0" Padding="12"
                 BorderThickness="1"
@@ -45,27 +49,41 @@
                 <TextBlock Text="{Binding FocusReminderIntervalText}" Margin="0,6,0,0" Foreground="#57491F"/>
             </StackPanel>
         </Border>
-        <!-- Outer scrolling keeps both columns reachable on smaller displays. -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
+        <!-- Three independently scrolling areas with two resizable side columns. -->
+        <Grid x:Name="PanelGrid" Margin="10,10,10,10" SizeChanged="PanelGrid_SizeChanged">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition x:Name="LeftPanelColumn" Width="220" MinWidth="220" MaxWidth="480"/>
+                <ColumnDefinition x:Name="LeftSplitterColumn" Width="8"/>
+                <ColumnDefinition Width="*" MinWidth="440"/>
+                <ColumnDefinition x:Name="RightSplitterColumn" Width="8"/>
+                <ColumnDefinition x:Name="RightPanelColumn" Width="320" MinWidth="320" MaxWidth="550"/>
+            </Grid.ColumnDefinitions>
+            <views:TodoControl x:Name="LeftPanel" Grid.Column="0" DataContext="{Binding Todo}"/>
+            <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch" ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext" Background="#B8B8B8"
+                          ShowsPreview="True"/>
+            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       CanContentScroll="False">
-            <Grid Margin="10">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="350"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                <StackPanel Margin="0,0,0,10">
                     <views:PresetControl IsEnabled="{Binding CanEditSettings}"/>
                     <views:TimerControl/>
                     <views:ScheduledActionControl/>
                 </StackPanel>
-
-                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+            </ScrollViewer>
+            <GridSplitter x:Name="RightSplitter" Grid.Column="3" Width="6" HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch" ResizeDirection="Columns"
+                          ResizeBehavior="PreviousAndNext" Background="#B8B8B8"
+                          ShowsPreview="True"/>
+            <ScrollViewer x:Name="RightPanel" Grid.Column="4"
+                          VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          CanContentScroll="False">
+                <StackPanel VerticalAlignment="Top">
                     <views:MotivationControl/>
                     <views:HistoryControl/>
                 </StackPanel>
-            </Grid>
-        </ScrollViewer>
+            </ScrollViewer>
+        </Grid>
     </DockPanel>
 </Window>
