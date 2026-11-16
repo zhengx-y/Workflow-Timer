@@ -27,6 +27,7 @@ namespace Workflow_Timer
         private HotkeyService? _hotkeyService;
         private TrayService? _trayService;
         private bool _restoringFromTray;
+        private bool _shortcutPromptChecked;
         private bool _settingsOpen;
         private bool _dispatchingHotkey;
         private string? _hotkeyWarning;
@@ -165,7 +166,32 @@ namespace Workflow_Timer
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     _hotkeyWarning = null;
                 }
+                PromptForDesktopShortcut();
             };
+        }
+
+        private void PromptForDesktopShortcut()
+        {
+            if (_shortcutPromptChecked || _closing) return;
+            _shortcutPromptChecked = true;
+            try
+            {
+                if (ShortcutService.HasPrompted) return;
+                var answer = MessageBox.Show(this,
+                    "Welcome to Workflow Timer!\n\nWould you like to create a desktop shortcut?\n\n" +
+                    "You can also create one later in Settings.",
+                    "Workflow Timer", MessageBoxButton.YesNo, MessageBoxImage.Question,
+                    MessageBoxResult.No);
+                // Remember both Yes and No, even if shortcut creation fails.
+                ShortcutService.RememberPrompt();
+                if (answer == MessageBoxResult.Yes)
+                    ShortcutService.CreateDesktopShortcut();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Desktop shortcut setup could not be completed. You can try again in Settings.\n\n" +
+                    ex.Message, "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         protected override void OnClosing(global::System.ComponentModel.CancelEventArgs e)

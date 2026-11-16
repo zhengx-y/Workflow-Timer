@@ -116,6 +116,20 @@ namespace Workflow_Timer.Views
             DialogResult = true;
         }
 
+        private void CreateDesktopShortcut_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Workflow_Timer.Services.System.ShortcutService.CreateDesktopShortcut();
+                MessageBox.Show(this, "Desktop shortcut created or updated.", "Workflow Timer",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                ErrorText.Text = "Could not create desktop shortcut: " + ex.Message;
+            }
+        }
+
         private void OpenDataFolder_Click(object sender, RoutedEventArgs e)
         {
             try { DataManagementService.OpenFolder(); }

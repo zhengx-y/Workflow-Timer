@@ -14,8 +14,11 @@
   <ItemGroup>
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
-    <None Remove="Resources\Icons\Workflow_Timer.ico" />
     <Resource Include="Resources\Icons\Workflow_Timer.ico" />
+    <None Update="Resources\Icons\Workflow_Timer.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
     <None Update="Resources\Quotes\Motivation.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
