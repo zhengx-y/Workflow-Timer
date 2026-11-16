@@ -24,12 +24,19 @@ namespace Workflow_Timer.Services.TimerEngine
 
 
         public TimeSpan RemainingTime =>
-            State switch
-            {
-                SessionState.Working => _workTimer.RemainingTime,
-                SessionState.Break => _breakTimer.RemainingTime,
-                _ => TimeSpan.Zero
-            };
+    State switch
+    {
+        SessionState.Working => _workTimer.RemainingTime,
+        SessionState.Break => _breakTimer.RemainingTime,
+
+        SessionState.Paused when _workTimer.IsPaused
+            => _workTimer.RemainingTime,
+
+        SessionState.Paused when _breakTimer.IsPaused
+            => _breakTimer.RemainingTime,
+
+        _ => TimeSpan.Zero
+    };
 
 
         // Used by SchedulerService

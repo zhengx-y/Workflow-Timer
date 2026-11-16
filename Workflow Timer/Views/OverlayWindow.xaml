@@ -16,7 +16,8 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <TextBlock x:Name="StateText" Grid.Row="0" Text="WORKING"
-                       FontSize="14" FontWeight="Bold" TextAlignment="Center"/>
+                       FontSize="14" FontWeight="Bold" TextAlignment="Center"
+                       Background="Transparent" MouseLeftButtonDown="StateText_MouseLeftButtonDown"/>
             <TextBlock x:Name="TimeText" Grid.Row="1" Text="00:00:00"
                        FontSize="32" FontWeight="Bold" TextAlignment="Center"
                        Margin="0,2,0,8"/>

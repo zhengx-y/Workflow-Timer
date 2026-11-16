@@ -6,23 +6,29 @@
         Width="1000" Height="740"
         MinWidth="1000" MinHeight="550">
 
-    <!-- Outer scrolling keeps both columns reachable on smaller displays. -->
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled"
-                  CanContentScroll="False">
-        <Grid Margin="10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="350"/>
-            </Grid.ColumnDefinitions>
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="10,10,10,0" LastChildFill="False">
+            <Button DockPanel.Dock="Right" Content="Settings..." Padding="12,5"
+                    IsEnabled="{Binding CanEditSettings}" Click="SettingsButton_Click"/>
+        </DockPanel>
+        <!-- Outer scrolling keeps both columns reachable on smaller displays. -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      CanContentScroll="False">
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="350"/>
+                </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                <views:PresetControl IsEnabled="{Binding CanEditSettings}"/>
-                <views:TimerControl/>
-                <views:ScheduledActionControl/>
-            </StackPanel>
+                <StackPanel Grid.Column="0" Margin="0,0,12,0">
+                    <views:PresetControl IsEnabled="{Binding CanEditSettings}"/>
+                    <views:TimerControl/>
+                    <views:ScheduledActionControl/>
+                </StackPanel>
 
-            <views:HistoryControl Grid.Column="1" VerticalAlignment="Top"/>
-        </Grid>
-    </ScrollViewer>
+                <views:HistoryControl Grid.Column="1" VerticalAlignment="Top"/>
+            </Grid>
+        </ScrollViewer>
+    </DockPanel>
 </Window>

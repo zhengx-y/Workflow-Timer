@@ -1,19 +1,33 @@
 using System;
 using System.Windows;
 using Workflow_Timer.Views;
+using Workflow_Timer.Enums;
 
 namespace Workflow_Timer.Services.TimerEngine
 {
     public class OverlayService
     {
         private OverlayWindow? _window;
+        private OverlayPosition _position = OverlayPosition.TopLeft;
+        private double? _left;
+        private double? _top;
 
         public event EventHandler? PauseRequested;
         public event EventHandler? ResumeRequested;
+        public event EventHandler<Point>? PositionDragged;
+
+        public void ConfigurePosition(OverlayPosition position, double? left, double? top)
+        {
+            _position = position;
+            _left = left;
+            _top = top;
+            _window?.ApplyPosition(_position, _left, _top);
+        }
 
         public void Show()
         {
             EnsureWindow();
+            _window!.ApplyPosition(_position, _left, _top);
             if (!_window!.IsVisible)
                 _window.Show();
             _window.BringToFront();
@@ -38,6 +52,8 @@ namespace Workflow_Timer.Services.TimerEngine
                 return;
 
             _window = new OverlayWindow();
+            _window.ApplyPosition(_position, _left, _top);
+            _window.PositionDragged += Window_PositionDragged;
             _window.PauseRequested += Window_PauseRequested;
             _window.ResumeRequested += Window_ResumeRequested;
             _window.Closed += (_, _) =>
@@ -46,6 +62,7 @@ namespace Workflow_Timer.Services.TimerEngine
                 {
                     _window.PauseRequested -= Window_PauseRequested;
                     _window.ResumeRequested -= Window_ResumeRequested;
+                    _window.PositionDragged -= Window_PositionDragged;
                     _window = null;
                 }
             };
@@ -56,5 +73,12 @@ namespace Workflow_Timer.Services.TimerEngine
 
         private void Window_ResumeRequested(object? sender, EventArgs e) =>
             ResumeRequested?.Invoke(this, EventArgs.Empty);
+
+        private void Window_PositionDragged(object? sender, Point point)
+        {
+            _left = point.X;
+            _top = point.Y;
+            PositionDragged?.Invoke(this, point);
+        }
     }
 }

@@ -1,26 +1,89 @@
-﻿using System;
+using System;
+using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-//Theme
-
-//Window size
-
-//Overlay position
-
-//Autostart
-
-//Focus grabber interval
-
-//Default snooze
-
-//etc.
+using Workflow_Timer.Enums;
+using Workflow_Timer.Models;
 
 namespace Workflow_Timer.Services.Storage
 {
-    class SettingsService
+    public class SettingsService
     {
+        private readonly AppDataPathService _paths;
+        private readonly JsonStorageService _storage = new();
+
+        public SettingsService(AppDataPathService paths)
+        {
+            _paths = paths;
+        }
+
+        public Settings Load()
+        {
+            var path = _paths.SettingsPath;
+            if (!File.Exists(path))
+            {
+                var defaults = new Settings();
+                Save(defaults);
+                return defaults;
+            }
+
+            var settings = _storage.Load<Settings>(path)
+                ?? throw new InvalidDataException("Settings file contains no settings.");
+            Validate(settings);
+            return settings;
+        }
+
+        public void Save(Settings settings)
+        {
+            Validate(settings);
+            var path = _paths.SettingsPath;
+            var temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                _storage.Save(temporaryPath, settings);
+                File.Move(temporaryPath, path, overwrite: true);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+            }
+        }
+
+        public static void Validate(Settings settings)
+        {
+            if (!Enum.IsDefined(settings.OverlayPosition))
+                throw new InvalidDataException("Select a valid widget position.");
+            if (settings.FocusGrabberIntervalMinutes < 1 || settings.FocusGrabberIntervalMinutes > 1440)
+                throw new InvalidDataException("Reminder interval must be between 1 and 1440 minutes.");
+            if (settings.SnoozeMinutes < 1 || settings.SnoozeMinutes > 1440)
+                throw new InvalidDataException("Snooze duration must be between 1 and 1440 minutes.");
+            ValidateHotkeys(settings.Hotkeys);
+        }
+
+        private static void ValidateHotkeys(List<HotkeyBinding> hotkeys)
+        {
+            if (hotkeys == null)
+                throw new InvalidDataException("Hotkey settings are missing.");
+
+            var actions = new HashSet<HotkeyAction>();
+            var gestures = new HashSet<(uint Modifiers, string Key)>();
+            foreach (var binding in hotkeys)
+            {
+                if (binding == null || !Enum.IsDefined(binding.Action) || !actions.Add(binding.Action))
+                    throw new InvalidDataException("Invalid or duplicate hotkey action.");
+                if (!Enum.IsDefined(binding.Modifier1) || binding.Modifier1 == HotkeyModifier.None ||
+                    !Enum.IsDefined(binding.Modifier2) ||
+                    binding.Modifier1 == binding.Modifier2)
+                    throw new InvalidDataException($"{binding.ActionName}: choose two different modifiers or None for the second.");
+                if (binding.Key == null || (binding.Key.Length != 0 &&
+                    (binding.Key.Length != 1 || binding.Key[0] < 'A' || binding.Key[0] > 'Z')))
+                    throw new InvalidDataException($"{binding.ActionName}: use one letter A–Z or leave the key blank.");
+                if (binding.IsAssigned && !gestures.Add((binding.ModifierMask, binding.Key)))
+                    throw new InvalidDataException($"Duplicate hotkey: {binding.Gesture}.");
+            }
+
+            if (actions.Count != Enum.GetValues<HotkeyAction>().Length)
+                throw new InvalidDataException("One or more hotkey actions are missing.");
+        }
     }
 }

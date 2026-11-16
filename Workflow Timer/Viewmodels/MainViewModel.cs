@@ -27,9 +27,12 @@ namespace Workflow_Timer.Viewmodels
 
         private readonly PresetService _presetService;
         private readonly HistoryService _historyService;
+        private readonly SettingsService _settingsService;
+        private readonly StartupService _startupService = new();
+        public Settings CurrentSettings { get; private set; } = new();
+        public string? SettingsLoadWarning { get; private set; }
         private DateTime _workStartedAt;
         private bool _workRecorded;
-        private TimeSpan _lastOverlayRemaining;
 
         private Preset? _selectedPreset;
         private ScheduledActionViewModel? _selectedScheduledAction;
@@ -159,6 +162,9 @@ namespace Workflow_Timer.Viewmodels
         public TimeSpan RemainingTime =>
             _workflowTimer.RemainingTime;
 
+        public string RemainingTimeText =>
+    RemainingTime.ToString(@"hh\:mm\:ss");
+
         public SessionState State =>
             _workflowTimer.State;
 
@@ -192,6 +198,17 @@ namespace Workflow_Timer.Viewmodels
 
         public MainViewModel()
         {
+            _settingsService = new SettingsService(new AppDataPathService());
+            try
+            {
+                CurrentSettings = _settingsService.Load();
+            }
+            catch (Exception ex)
+            {
+                SettingsLoadWarning = "Could not load settings. Defaults are active for this run. "
+                    + "Saving settings will replace the existing settings file.\n\n" + ex.Message;
+            }
+
             _workflowTimer = new WorkflowTimer(
                 new WorkTimer(),
                 new BreakTimer());
@@ -208,6 +225,9 @@ namespace Workflow_Timer.Viewmodels
                 new LauncherService());
 
             _overlayService = new OverlayService();
+            _overlayService.ConfigurePosition(CurrentSettings.OverlayPosition,
+                CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop);
+            _overlayService.PositionDragged += (_, point) => SaveOverlayPosition(point);
             _overlayService.PauseRequested += (_, _) => PauseTimer();
             _overlayService.ResumeRequested += (_, _) => ResumeTimer();
 
@@ -287,6 +307,116 @@ namespace Workflow_Timer.Viewmodels
                 SelectedScheduledAction = null;
                 ClearActionFields();
             });
+        }
+
+        public void SaveSettings(Settings settings)
+        {
+            if (!CanEditSettings)
+                throw new InvalidOperationException("Stop the timer before changing settings.");
+
+            SettingsService.Validate(settings);
+            // Apply the explicit user choice only when Save is clicked.
+            var restoreStartup = _startupService.Apply(settings.StartWithWindows);
+            try
+            {
+                _settingsService.Save(settings);
+            }
+            catch (Exception saveError)
+            {
+                try
+                {
+                    restoreStartup();
+                }
+                catch (Exception restoreError)
+                {
+                    throw new InvalidOperationException(
+                        "Could not save settings or restore the previous Windows startup entry. "
+                        + saveError.Message + " Restore error: " + restoreError.Message,
+                        restoreError);
+                }
+                throw;
+            }
+            CurrentSettings = settings.Copy();
+            SettingsLoadWarning = null;
+            _overlayService.ConfigurePosition(CurrentSettings.OverlayPosition,
+                CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop);
+            OnPropertyChanged(nameof(CurrentSettings));
+        }
+
+        private void SaveOverlayPosition(Point point)
+        {
+            if (CurrentSettings.OverlayPosition != OverlayPosition.FreeDrag)
+                return;
+
+            // Dragging is allowed during a session, unlike editing other settings.
+            // Write only the position, without touching Windows startup registration.
+            var candidate = CurrentSettings.Copy();
+            candidate.OverlayLeft = point.X;
+            candidate.OverlayTop = point.Y;
+            try
+            {
+                _settingsService.Save(candidate);
+                CurrentSettings = candidate;
+                OnPropertyChanged(nameof(CurrentSettings));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not save the widget position. It will remain moved for this run.\n\n"
+                    + ex.Message, "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public void ExecuteHotkey(HotkeyAction action)
+        {
+            switch (action)
+            {
+                case HotkeyAction.StartTimer:
+                    TimerCommands.StartCommand.Execute(null);
+                    break;
+                case HotkeyAction.StopTimer:
+                    TimerCommands.StopCommand.Execute(null);
+                    break;
+                case HotkeyAction.PauseResume:
+                    if (CanResumeTimer)
+                        TimerCommands.ResumeCommand.Execute(null);
+                    else if (CanPauseTimer)
+                        TimerCommands.PauseCommand.Execute(null);
+                    break;
+                case HotkeyAction.RepeatTimer:
+                    TimerCommands.RepeatCommand.Execute(null);
+                    break;
+                case HotkeyAction.Extend5:
+                    TimerCommands.ExtendCommand.Execute(5);
+                    break;
+                case HotkeyAction.Extend10:
+                    TimerCommands.ExtendCommand.Execute(10);
+                    break;
+                case HotkeyAction.Extend30:
+                    TimerCommands.ExtendCommand.Execute(30);
+                    break;
+                case HotkeyAction.Extend60:
+                    TimerCommands.ExtendCommand.Execute(60);
+                    break;
+                case HotkeyAction.NextPreset:
+                    SelectAdjacentPreset(1);
+                    break;
+                case HotkeyAction.PreviousPreset:
+                    SelectAdjacentPreset(-1);
+                    break;
+                case HotkeyAction.CreatePreset:
+                    if (CanEditSettings)
+                        PresetCommands.CreatePresetCommand.Execute(null);
+                    break;
+            }
+        }
+
+        private void SelectAdjacentPreset(int direction)
+        {
+            if (!CanEditSettings || Presets.Count == 0)
+                return;
+            int index = SelectedPreset == null ? -1 : Presets.IndexOf(SelectedPreset);
+            SelectedPreset = index < 0 ? Presets[0]
+                : Presets[(index + direction + Presets.Count) % Presets.Count];
         }
 
         private void StartTimer()
@@ -406,13 +536,7 @@ namespace Workflow_Timer.Viewmodels
 
         private void UpdateOverlay()
         {
-            // WorkflowTimer.RemainingTime is zero in Paused state; keep the
-            // last known countdown on-screen until the timer resumes.
-            TimeSpan remaining = _workflowTimer.State == SessionState.Paused
-                ? _lastOverlayRemaining : _workflowTimer.RemainingTime;
-            if (_workflowTimer.State != SessionState.Paused)
-                _lastOverlayRemaining = remaining;
-
+            TimeSpan remaining = _workflowTimer.RemainingTime;
             string? nextName = null;
             TimeSpan? nextRemaining = null;
             if (_workflowTimer.State == SessionState.Working ||
@@ -952,6 +1076,7 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(CanResumeTimer));
             OnPropertyChanged(nameof(CanRepeatTimer));
             OnPropertyChanged(nameof(CanExtendTimer));
+            OnPropertyChanged(nameof(RemainingTimeText));
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

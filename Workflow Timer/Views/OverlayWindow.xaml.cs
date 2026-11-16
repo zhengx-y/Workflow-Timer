@@ -1,6 +1,8 @@
 using System;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Threading;
+using Workflow_Timer.Enums;
 
 namespace Workflow_Timer.Views
 {
@@ -10,17 +12,18 @@ namespace Workflow_Timer.Views
         private bool _isBlinking;
         private int _blinkCount;
         private string _currentState = string.Empty;
+        private OverlayPosition _position = OverlayPosition.TopLeft;
+        private const double EdgeMargin = 12;
 
         public event EventHandler? PauseRequested;
         public event EventHandler? ResumeRequested;
+        public event EventHandler<Point>? PositionDragged;
 
         public OverlayWindow()
         {
             InitializeComponent();
-            // WPF's work area is expressed in device-independent units and excludes
-            // the taskbar; it adapts to primary-monitor resolution and DPI scaling.
             WindowStartupLocation = WindowStartupLocation.Manual;
-            PositionTopLeft();
+            ApplyPosition(OverlayPosition.TopLeft, null, null);
             _blinkTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(250)
@@ -28,11 +31,52 @@ namespace Workflow_Timer.Views
             _blinkTimer.Tick += BlinkTimer_Tick;
         }
 
-        private void PositionTopLeft()
+        public void ApplyPosition(OverlayPosition position, double? savedLeft, double? savedTop)
+        {
+            _position = position;
+            StateText.Cursor = position == OverlayPosition.FreeDrag ? Cursors.SizeAll : Cursors.Arrow;
+            StateText.ToolTip = position == OverlayPosition.FreeDrag ? "Drag to move widget" : null;
+
+            // Primary monitor work area, in WPF device-independent coordinates.
+            Rect area = SystemParameters.WorkArea;
+            double left = area.Left + EdgeMargin;
+            double top = area.Top + EdgeMargin;
+            if (position == OverlayPosition.TopRight || position == OverlayPosition.BottomRight)
+                left = area.Right - Width - EdgeMargin;
+            if (position == OverlayPosition.BottomLeft || position == OverlayPosition.BottomRight)
+                top = area.Bottom - Height - EdgeMargin;
+            if (position == OverlayPosition.FreeDrag &&
+                savedLeft is double x && savedTop is double y &&
+                double.IsFinite(x) && double.IsFinite(y))
+            {
+                left = x;
+                top = y;
+            }
+
+            PlaceWithinWorkArea(left, top);
+        }
+
+        private void PlaceWithinWorkArea(double left, double top)
         {
             Rect area = SystemParameters.WorkArea;
-            Left = area.Left + 12;
-            Top = area.Top + 12;
+            double maxLeft = Math.Max(area.Left, area.Right - Width);
+            double maxTop = Math.Max(area.Top, area.Bottom - Height);
+            Left = Math.Clamp(left, area.Left, maxLeft);
+            Top = Math.Clamp(top, area.Top, maxTop);
+        }
+
+        private void StateText_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (_position != OverlayPosition.FreeDrag || e.ButtonState != MouseButtonState.Pressed)
+                return;
+
+            e.Handled = true;
+            double oldLeft = Left;
+            double oldTop = Top;
+            DragMove();
+            PlaceWithinWorkArea(Left, Top);
+            if (Left != oldLeft || Top != oldTop)
+                PositionDragged?.Invoke(this, new Point(Left, Top));
         }
 
         public void UpdateDisplay(string state, TimeSpan remainingTime,
