@@ -19,7 +19,7 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel>
                 <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
-                <TextBlock Text="Startup, widget placement and keyboard shortcuts are active. Focus reminders will be enabled in a later patch."
+                <TextBlock Text="Configure startup, widget placement, focus reminders and global keyboard shortcuts."
                            TextWrapping="Wrap" Margin="0,6,0,14"/>
                 <GroupBox Header="Startup" Margin="0,0,0,10">
                     <StackPanel Margin="10">
@@ -36,9 +36,11 @@
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Focus reminders (7E)" Margin="0,0,0,10">
+                <GroupBox Header="Focus reminders" Margin="0,0,0,10">
                     <StackPanel Margin="10">
                         <CheckBox x:Name="FocusCheck" Content="Remind me after the break ends" Margin="0,0,0,8"/>
+                        <TextBlock Text="Show a persistent reminder when a break finishes naturally. Dismiss or snooze stops blinking temporarily; cancel stops reminders until the next completed break."
+                                   TextWrapping="Wrap" Margin="0,0,0,8"/>
                         <TextBlock Text="Reminder interval (minutes)"/>
                         <TextBox x:Name="IntervalBox" Margin="0,4,0,8"/>
                         <TextBlock Text="Snooze duration (minutes)"/>

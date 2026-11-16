@@ -28,12 +28,16 @@ namespace Workflow_Timer
         private bool _settingsOpen;
         private bool _dispatchingHotkey;
         private string? _hotkeyWarning;
+        private bool _reminderFocusDeferred;
+        private bool _closing;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            DataContext = new MainViewModel();
+            var viewModel = new MainViewModel();
+            DataContext = viewModel;
+            viewModel.FocusReminderRequested += (_, _) => FocusReminderRequested();
             SourceInitialized += (_, _) => InitializeHotkeys();
             Loaded += (_, _) =>
             {
@@ -51,8 +55,29 @@ namespace Workflow_Timer
         protected override void OnClosing(global::System.ComponentModel.CancelEventArgs e)
         {
             base.OnClosing(e);
+            if (!e.Cancel && DataContext is MainViewModel pending &&
+                !pending.ResolvePendingPresetEdits())
+                e.Cancel = true;
             if (!e.Cancel)
+            {
+                _closing = true;
+                if (DataContext is MainViewModel vm)
+                    vm.ShutdownFocusReminders();
                 _hotkeyService?.Dispose();
+            }
+        }
+
+        private void FocusReminderRequested()
+        {
+            if (_closing)
+                return;
+            if (_settingsOpen || !IsEnabled)
+            {
+                _reminderFocusDeferred = true;
+                return;
+            }
+            _reminderFocusDeferred = false;
+            WindowFocusService.BringIntoFocus(this);
         }
 
         private void InitializeHotkeys()
@@ -152,6 +177,12 @@ namespace Workflow_Timer
             finally
             {
                 _settingsOpen = false;
+                if (_reminderFocusDeferred)
+                {
+                    _reminderFocusDeferred = false;
+                    if (vm.IsFocusReminderAttentionActive)
+                        FocusReminderRequested();
+                }
             }
         }
     }

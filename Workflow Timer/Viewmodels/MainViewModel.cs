@@ -29,12 +29,64 @@ namespace Workflow_Timer.Viewmodels
         private readonly HistoryService _historyService;
         private readonly SettingsService _settingsService;
         private readonly StartupService _startupService = new();
+        private readonly FocusReminderService _focusReminder = new();
         public Settings CurrentSettings { get; private set; } = new();
         public string? SettingsLoadWarning { get; private set; }
+        public bool IsFocusReminderVisible => _focusReminder.IsVisible;
+        public bool IsFocusReminderAttentionActive => _focusReminder.IsAttentionActive;
+        public bool IsFocusReminderBlinkOn => _focusReminder.IsBlinkOn;
+        public string SnoozeReminderText => $"Snooze {CurrentSettings.SnoozeMinutes} min";
+        public string FocusReminderIntervalText
+        {
+            get
+            {
+                var remaining = _focusReminder.Remaining;
+                var countdown = $"{(int)remaining.TotalHours:00}:{remaining.Minutes:00}:{remaining.Seconds:00}";
+                var status = _focusReminder.IsSnoozed ? "Snoozed" :
+                    _focusReminder.IsAttentionActive ? "Reminder active" : "Dismissed";
+                return $"{status} — Next reminder in {countdown}";
+            }
+        }
+        public ICommand SnoozeReminderCommand { get; }
+        public ICommand DismissReminderCommand { get; }
+        public ICommand CancelReminderCommand { get; }
+        public event EventHandler? FocusReminderRequested;
         private DateTime _workStartedAt;
         private bool _workRecorded;
 
         private Preset? _selectedPreset;
+        private string _presetNameDraft = string.Empty;
+        private string _presetWorkDraft = string.Empty;
+        private string _presetBreakDraft = string.Empty;
+        private bool _resolvingPresetEdits;
+
+        public string PresetNameDraft
+        {
+            get => _presetNameDraft;
+            set { _presetNameDraft = value; NotifyPresetDraft(); }
+        }
+
+        public string PresetWorkDraft
+        {
+            get => _presetWorkDraft;
+            set { _presetWorkDraft = value; NotifyPresetDraft(); }
+        }
+
+        public string PresetBreakDraft
+        {
+            get => _presetBreakDraft;
+            set { _presetBreakDraft = value; NotifyPresetDraft(); }
+        }
+
+        public bool HasUnsavedPresetChanges => SelectedPreset is Preset preset &&
+            (PresetNameDraft != preset.Name ||
+             !TryParsePresetDuration(PresetWorkDraft, out var work) || work != preset.Session.WorkDuration ||
+             !TryParsePresetDuration(PresetBreakDraft, out var pause) || pause != preset.Session.BreakDuration);
+
+        private bool CanRunSelectedPreset => SelectedPreset != null &&
+            !HasUnsavedPresetChanges && !_resolvingPresetEdits &&
+            SelectedPreset.Session.WorkDuration > TimeSpan.Zero &&
+            SelectedPreset.Session.BreakDuration >= TimeSpan.Zero;
         private ScheduledActionViewModel? _selectedScheduledAction;
         private string _actionName = string.Empty;
         private string _actionTarget = string.Empty;
@@ -142,17 +194,31 @@ namespace Workflow_Timer.Viewmodels
             get => _selectedPreset;
             set
             {
-                if (_selectedPreset == value || !CanEditSettings)
+                if (_selectedPreset == value)
                     return;
 
-                _selectedPreset = value;
+                if (value == null || !CanEditSettings || !ResolvePendingPresetEdits())
+                {
+                    // Restore the ComboBox selection after its TwoWay update finishes.
+                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        OnPropertyChanged(nameof(SelectedPreset))));
+                    return;
+                }
 
-                RefreshScheduledActions();
-                SelectedScheduledAction = null;
-                ClearActionFields();
-
-                OnPropertyChanged();
+                SelectPreset(value);
             }
+        }
+
+        private void SelectPreset(Preset value)
+        {
+            _selectedPreset = value;
+            ResetPresetDraft();
+
+            RefreshScheduledActions();
+            SelectedScheduledAction = null;
+            ClearActionFields();
+
+            OnPropertyChanged(nameof(SelectedPreset));
         }
 
         public TimerCommands TimerCommands { get; }
@@ -216,6 +282,20 @@ namespace Workflow_Timer.Viewmodels
             _workflowTimer.Tick += WorkflowTimer_Tick;
             _workflowTimer.SessionCompleted += WorkflowTimer_SessionCompleted;
             _workflowTimer.WorkCompleted += WorkflowTimer_WorkCompleted;
+
+            SnoozeReminderCommand = new RelayCommand(_focusReminder.Snooze);
+            DismissReminderCommand = new RelayCommand(_focusReminder.Dismiss);
+            CancelReminderCommand = new RelayCommand(_focusReminder.Cancel);
+            _focusReminder.StateChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(IsFocusReminderVisible));
+                OnPropertyChanged(nameof(IsFocusReminderAttentionActive));
+                OnPropertyChanged(nameof(IsFocusReminderBlinkOn));
+                OnPropertyChanged(nameof(FocusReminderIntervalText));
+            };
+            _focusReminder.ReminderDue += (_, _) =>
+                FocusReminderRequested?.Invoke(this, EventArgs.Empty);
+            ConfigureFocusReminder();
 
             // Persist unfinished work if Windows/the user closes the app normally.
             if (Application.Current != null)
@@ -289,7 +369,9 @@ namespace Workflow_Timer.Viewmodels
                 ResumeTimer,
                 StopTimer,
                 RepeatTimer,
-                ExtendTimer);
+                ExtendTimer,
+                () => CanStartTimer && CanRunSelectedPreset,
+                () => CanRepeatTimer && CanRunSelectedPreset);
 
             PresetCommands = new PresetCommands(
                 LoadPreset,
@@ -341,7 +423,18 @@ namespace Workflow_Timer.Viewmodels
             _overlayService.ConfigurePosition(CurrentSettings.OverlayPosition,
                 CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop);
             OnPropertyChanged(nameof(CurrentSettings));
+            ConfigureFocusReminder();
         }
+
+        private void ConfigureFocusReminder()
+        {
+            _focusReminder.Configure(CurrentSettings.FocusGrabberEnabled,
+                CurrentSettings.FocusGrabberIntervalMinutes, CurrentSettings.SnoozeMinutes);
+            OnPropertyChanged(nameof(SnoozeReminderText));
+            OnPropertyChanged(nameof(FocusReminderIntervalText));
+        }
+
+        public void ShutdownFocusReminders() => _focusReminder.Dispose();
 
         private void SaveOverlayPosition(Point point)
         {
@@ -421,7 +514,7 @@ namespace Workflow_Timer.Viewmodels
 
         private void StartTimer()
         {
-            if (!CanStartTimer)
+            if (!CanStartTimer || !CanRunSelectedPreset)
                 return;
 
             if (SelectedPreset == null)
@@ -430,6 +523,7 @@ namespace Workflow_Timer.Viewmodels
             if (_workflowTimer.IsRunning)
                 return;
 
+            _focusReminder.Cancel();
             ResetScheduledActions();
 
             _workStartedAt = DateTime.Now;
@@ -474,6 +568,7 @@ namespace Workflow_Timer.Viewmodels
             if (!HasActiveTimer)
                 return;
 
+            _focusReminder.Cancel();
             RecordWorkIfNeeded(false);
             _workflowTimer.Stop();
             _schedulerService.Reset();
@@ -486,9 +581,17 @@ namespace Workflow_Timer.Viewmodels
 
         private void RepeatTimer()
         {
-            if (!CanRepeatTimer)
+            if (!CanRepeatTimer || !CanRunSelectedPreset)
                 return;
 
+            // After completion the selected preset may have changed.
+            if (State == SessionState.Completed)
+            {
+                StartTimer();
+                return;
+            }
+
+            _focusReminder.Cancel();
             // Repeat discards the old countdown, so persist its work first.
             RecordWorkIfNeeded(false);
             ResetScheduledActions();
@@ -613,6 +716,7 @@ namespace Workflow_Timer.Viewmodels
             _overlayService.Blink();
 
             NotifyTimerProperties();
+            _focusReminder.Begin();
         }
 
         private void SchedulerService_ActionTriggered(
@@ -691,12 +795,137 @@ namespace Workflow_Timer.Viewmodels
             if (!CanEditSettings)
                 return;
 
-            _presetService.SavePresets(Presets.ToList());
+            TrySavePresetDraft();
+        }
+
+        private void PersistPresets() => _presetService.SavePresets(Presets.ToList());
+
+        private static string FormatPresetDuration(TimeSpan duration) =>
+            $"{(long)duration.TotalHours:00}:{duration.Minutes:00}:{duration.Seconds:00}";
+
+        private static bool TryParsePresetDuration(string text, out TimeSpan duration)
+        {
+            duration = TimeSpan.Zero;
+            var parts = text.Trim().Split(':');
+            if (parts.Length != 3 ||
+                !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out int hours) ||
+                !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out int minutes) ||
+                !int.TryParse(parts[2], NumberStyles.None, CultureInfo.InvariantCulture, out int seconds) ||
+                minutes > 59 || seconds > 59)
+                return false;
+            try
+            {
+                duration = new TimeSpan(hours, minutes, seconds);
+                return true;
+            }
+            catch (OverflowException)
+            {
+                return false;
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return false;
+            }
+        }
+
+        private void NotifyPresetDraft()
+        {
+            OnPropertyChanged(nameof(HasUnsavedPresetChanges));
+            TimerCommands?.RefreshAvailability();
+        }
+
+        private void ResetPresetDraft()
+        {
+            if (SelectedPreset is not Preset preset)
+                return;
+            _presetNameDraft = preset.Name;
+            _presetWorkDraft = FormatPresetDuration(preset.Session.WorkDuration);
+            _presetBreakDraft = FormatPresetDuration(preset.Session.BreakDuration);
+            OnPropertyChanged(nameof(PresetNameDraft));
+            OnPropertyChanged(nameof(PresetWorkDraft));
+            OnPropertyChanged(nameof(PresetBreakDraft));
+            NotifyPresetDraft();
+        }
+
+        private bool TrySavePresetDraft()
+        {
+            if (SelectedPreset is not Preset preset)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(PresetNameDraft) ||
+                !TryParsePresetDuration(PresetWorkDraft, out var work) || work <= TimeSpan.Zero ||
+                !TryParsePresetDuration(PresetBreakDraft, out var pause))
+            {
+                MessageBox.Show("Enter a preset name, a positive work duration and a non-negative break duration (HH:MM:SS).",
+                    "Invalid preset", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            if (preset.Session.Actions.Any(action => action.OffsetFromStart > work))
+            {
+                MessageBox.Show("A scheduled action has an offset beyond the new work duration. Adjust or remove that action first.",
+                    "Invalid preset", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            var oldName = preset.Name;
+            var oldWork = preset.Session.WorkDuration;
+            var oldBreak = preset.Session.BreakDuration;
+            preset.Name = PresetNameDraft.Trim();
+            preset.Session.WorkDuration = work;
+            preset.Session.BreakDuration = pause;
+            try
+            {
+                PersistPresets();
+            }
+            catch (Exception ex)
+            {
+                preset.Name = oldName;
+                preset.Session.WorkDuration = oldWork;
+                preset.Session.BreakDuration = oldBreak;
+                NotifyPresetDraft();
+                MessageBox.Show("Could not save the preset: " + ex.Message,
+                    "Save failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
+            ResetPresetDraft();
+            return true;
+        }
+
+        // Used by preset selection, creation, deletion and window closing.
+        public bool ResolvePendingPresetEdits()
+        {
+            if (_resolvingPresetEdits)
+                return false;
+            if (!HasUnsavedPresetChanges)
+                return true;
+
+            _resolvingPresetEdits = true;
+            NotifyPresetDraft();
+            try
+            {
+                var result = MessageBox.Show(Application.Current.MainWindow,
+                    "Save changes to the current preset?\n\nYes: Save\nNo: Discard\nCancel: Keep editing",
+                    "Unsaved preset changes", MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question, MessageBoxResult.Cancel);
+                if (result == MessageBoxResult.Yes)
+                    return TrySavePresetDraft();
+                if (result == MessageBoxResult.No)
+                {
+                    ResetPresetDraft();
+                    return true;
+                }
+                return false;
+            }
+            finally
+            {
+                _resolvingPresetEdits = false;
+                NotifyPresetDraft();
+            }
         }
 
         private void CreatePreset()
         {
-            if (!CanEditSettings)
+            if (!CanEditSettings || !ResolvePendingPresetEdits())
                 return;
 
             var preset = new Preset
@@ -711,8 +940,8 @@ namespace Workflow_Timer.Viewmodels
             };
 
             Presets.Add(preset);
-            SelectedPreset = preset;
-            _presetService.SavePresets(Presets.ToList());
+            SelectPreset(preset);
+            PersistPresets();
         }
 
         private void DeletePreset()
@@ -733,16 +962,16 @@ namespace Workflow_Timer.Viewmodels
             if (result != MessageBoxResult.Yes)
                 return;
 
+            if (!ResolvePendingPresetEdits())
+                return;
+
             int index = Presets.IndexOf(SelectedPreset);
 
-            Presets.Remove(SelectedPreset);
+            var deleted = SelectedPreset;
+            SelectPreset(Presets[index == Presets.Count - 1 ? index - 1 : index + 1]);
+            Presets.Remove(deleted);
 
-            SelectedPreset =
-                index < Presets.Count
-                    ? Presets[index]
-                    : Presets[^1];
-
-            _presetService.SavePresets(Presets.ToList());
+            PersistPresets();
         }
 
         private bool CanEditActions()
@@ -907,7 +1136,7 @@ namespace Workflow_Timer.Viewmodels
 
             SelectedPreset!.Session.Actions.Add(action);
             SortSelectedPresetActions();
-            SavePreset();
+            PersistPresets();
             RefreshScheduledActions();
             SelectedScheduledAction = ScheduledActions.First(x => ReferenceEquals(x.Action, action));
         }
@@ -927,7 +1156,7 @@ namespace Workflow_Timer.Viewmodels
             var action = item.Action;
             action.Enabled = !action.Enabled;
 
-            SavePreset();
+            PersistPresets();
             RefreshScheduledActions();
 
             // Restore selection and sync the editor checkbox to the saved value.
@@ -949,7 +1178,7 @@ namespace Workflow_Timer.Viewmodels
             action.Enabled = ActionEnabled;
 
             SortSelectedPresetActions();
-            SavePreset();
+            PersistPresets();
             RefreshScheduledActions();
             SelectedScheduledAction = ScheduledActions.First(x => ReferenceEquals(x.Action, action));
         }
@@ -972,7 +1201,7 @@ namespace Workflow_Timer.Viewmodels
 
             SelectedPreset!.Session.Actions.Remove(action);
             SortSelectedPresetActions();
-            SavePreset();
+            PersistPresets();
             RefreshScheduledActions();
             SelectedScheduledAction = null;
         }
@@ -1077,6 +1306,7 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(CanRepeatTimer));
             OnPropertyChanged(nameof(CanExtendTimer));
             OnPropertyChanged(nameof(RemainingTimeText));
+            TimerCommands?.RefreshAvailability();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

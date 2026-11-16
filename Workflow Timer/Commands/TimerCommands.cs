@@ -25,10 +25,12 @@ namespace Workflow_Timer.Commands
             Action resume,
             Action stop,
             Action repeat,
-            Action<object?> extend)
+            Action<object?> extend,
+            Func<bool>? canStart = null,
+            Func<bool>? canRepeat = null)
         {
             StartCommand =
-                new RelayCommand(start);
+                new RelayCommand(start, canStart);
 
             PauseCommand =
                 new RelayCommand(pause);
@@ -40,10 +42,16 @@ namespace Workflow_Timer.Commands
                 new RelayCommand(stop);
 
             RepeatCommand =
-                new RelayCommand(repeat);
+                new RelayCommand(repeat, canRepeat);
 
             ExtendCommand =
                 new RelayCommand(extend);
+        }
+
+        public void RefreshAvailability()
+        {
+            ((RelayCommand)StartCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)RepeatCommand).RaiseCanExecuteChanged();
         }
     }
 }

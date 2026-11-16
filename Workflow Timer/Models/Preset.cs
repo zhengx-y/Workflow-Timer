@@ -1,8 +1,23 @@
 ﻿namespace Workflow_Timer.Models
 {
-    public class Preset
+    public class Preset : global::System.ComponentModel.INotifyPropertyChanged
     {
-        public string Name { get; set; } = string.Empty;
+        private string _name = string.Empty;
+
+        public string Name
+        {
+            get => _name;
+            set
+            {
+                if (_name == value)
+                    return;
+                _name = value;
+                PropertyChanged?.Invoke(this,
+                    new global::System.ComponentModel.PropertyChangedEventArgs(nameof(Name)));
+            }
+        }
+
+        public event global::System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
         public TimerSession Session { get; set; } = new();
     }

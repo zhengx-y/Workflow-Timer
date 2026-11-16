@@ -88,6 +88,15 @@ namespace Workflow_Timer.Views
             bool paused = string.Equals(state, "Paused", StringComparison.OrdinalIgnoreCase);
             bool active = paused || string.Equals(state, "Working", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(state, "Break", StringComparison.OrdinalIgnoreCase);
+            // A new session can start immediately from the break reminder.
+            // Do not let the previous session's blink hide the new countdown.
+            if (active && _isBlinking)
+            {
+                _blinkTimer.Stop();
+                _isBlinking = false;
+                _blinkCount = 0;
+                Opacity = 1.0;
+            }
             PauseResumeButton.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
             PauseResumeButton.Content = paused ? "Resume" : "Pause";
             NextActionNameText.Text = string.IsNullOrWhiteSpace(nextActionName)

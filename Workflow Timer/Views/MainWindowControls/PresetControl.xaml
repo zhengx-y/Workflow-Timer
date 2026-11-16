@@ -9,6 +9,9 @@
             Margin="0,0,0,10">
 
         <StackPanel>
+            <StackPanel.Resources>
+                <BooleanToVisibilityConverter x:Key="UnsavedVisibility"/>
+            </StackPanel.Resources>
 
             <TextBlock Text="Preset Manager"
                        FontSize="18"
@@ -75,9 +78,9 @@
                          Grid.ColumnSpan="3"
                          MinHeight="28"
                          Margin="0,0,0,8"
-                         Text="{Binding SelectedPreset.Name,
+                         Text="{Binding PresetNameDraft,
                                         Mode=TwoWay,
-                                        UpdateSourceTrigger=LostFocus}"/>
+                                        UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="1"
                            Grid.Column="0"
@@ -89,9 +92,9 @@
                          Grid.Column="1"
                          MinHeight="28"
                          Margin="0,0,16,8"
-                         Text="{Binding SelectedPreset.Session.WorkDuration,
+                         Text="{Binding PresetWorkDraft,
                                         Mode=TwoWay,
-                                        UpdateSourceTrigger=LostFocus}"/>
+                                        UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="1"
                            Grid.Column="2"
@@ -103,9 +106,9 @@
                          Grid.Column="3"
                          MinHeight="28"
                          Margin="0,0,0,8"
-                         Text="{Binding SelectedPreset.Session.BreakDuration,
+                         Text="{Binding PresetBreakDraft,
                                         Mode=TwoWay,
-                                        UpdateSourceTrigger=LostFocus}"/>
+                                        UpdateSourceTrigger=PropertyChanged}"/>
 
                 <TextBlock Grid.Row="2"
                            Grid.Column="0"
@@ -114,6 +117,10 @@
                            Foreground="Gray"
                            FontSize="11"/>
             </Grid>
+            <TextBlock Text="Unsaved changes — save or restore the original values before starting."
+                       Foreground="#A65B00" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Margin="0,8,0,0"
+                       Visibility="{Binding HasUnsavedPresetChanges, Converter={StaticResource UnsavedVisibility}}"/>
 
         </StackPanel>
     </Border>

@@ -6,11 +6,45 @@
         Width="1000" Height="740"
         MinWidth="1000" MinHeight="550">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="ReminderVisibility"/>
+    </Window.Resources>
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="10,10,10,0" LastChildFill="False">
             <Button DockPanel.Dock="Right" Content="Settings..." Padding="12,5"
                     IsEnabled="{Binding CanEditSettings}" Click="SettingsButton_Click"/>
         </DockPanel>
+        <Border DockPanel.Dock="Top" Margin="10,8,10,0" Padding="12"
+                BorderThickness="1"
+                CornerRadius="6"
+                Visibility="{Binding IsFocusReminderVisible, Converter={StaticResource ReminderVisibility}}">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Background" Value="#FFF4D6"/>
+                    <Setter Property="BorderBrush" Value="#C99C35"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsFocusReminderBlinkOn}" Value="True">
+                            <Setter Property="Background" Value="#FFD36B"/>
+                            <Setter Property="BorderBrush" Value="#A66600"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel>
+                <TextBlock Text="Break is over!" FontSize="19" FontWeight="SemiBold" Foreground="#322710"/>
+                <TextBlock Text="Time to get back to work." Margin="0,3,0,8" Foreground="#322710"/>
+                <WrapPanel>
+                    <Button Content="Start work" Command="{Binding TimerCommands.StartCommand}"
+                            Padding="14,6" Margin="0,0,8,0"/>
+                    <Button Content="{Binding SnoozeReminderText}" Command="{Binding SnoozeReminderCommand}"
+                            Padding="14,6" Margin="0,0,8,0"/>
+                    <Button Content="Dismiss" Command="{Binding DismissReminderCommand}"
+                            IsEnabled="{Binding IsFocusReminderAttentionActive}" Padding="14,6" Margin="0,0,8,0"/>
+                    <Button Content="Cancel Reminder" Command="{Binding CancelReminderCommand}" Padding="14,6"/>
+                </WrapPanel>
+                <TextBlock Text="{Binding FocusReminderIntervalText}" Margin="0,6,0,0" Foreground="#57491F"/>
+            </StackPanel>
+        </Border>
         <!-- Outer scrolling keeps both columns reachable on smaller displays. -->
         <ScrollViewer VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"

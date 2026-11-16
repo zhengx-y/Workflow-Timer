@@ -7,11 +7,13 @@ namespace Workflow_Timer.Helpers
     {
         private readonly Action<object?>? _executeWithParameter;
         private readonly Action? _execute;
+        private readonly Func<bool>? _canExecute;
 
 
-        public RelayCommand(Action execute)
+        public RelayCommand(Action execute, Func<bool>? canExecute = null)
         {
             _execute = execute;
+            _canExecute = canExecute;
         }
 
 
@@ -23,12 +25,14 @@ namespace Workflow_Timer.Helpers
 
         public bool CanExecute(object? parameter)
         {
-            return true;
+            return _canExecute?.Invoke() ?? true;
         }
 
 
         public void Execute(object? parameter)
         {
+            if (!CanExecute(parameter))
+                return;
             if (_execute != null)
                 _execute();
 
@@ -38,5 +42,8 @@ namespace Workflow_Timer.Helpers
 
 
         public event EventHandler? CanExecuteChanged;
+
+        public void RaiseCanExecuteChanged() =>
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

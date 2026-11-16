@@ -200,19 +200,23 @@ namespace Workflow_Timer.Services.TimerEngine
         {
             WorkCompleted?.Invoke(this, EventArgs.Empty);
 
-
             if (_currentSession == null)
                 return;
 
+            // Skip the break if no break duration is configured.
+            if (_currentSession.BreakDuration == TimeSpan.Zero)
+            {
+                State = SessionState.Completed;
+
+                SessionCompleted?.Invoke(this, EventArgs.Empty);
+                return;
+            }
 
             State = SessionState.Break;
 
-
             BreakStarted?.Invoke(this, EventArgs.Empty);
 
-
-            _breakTimer.Start(
-                _currentSession.BreakDuration);
+            _breakTimer.Start(_currentSession.BreakDuration);
         }
 
 
