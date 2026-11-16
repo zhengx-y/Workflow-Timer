@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace Workflow_Timer.Enums
 {
-    class NotificationType
+    public enum NotificationType
     {
+        WorkCompleted,
+        BreakCompleted,
+        FocusReminder
     }
 }

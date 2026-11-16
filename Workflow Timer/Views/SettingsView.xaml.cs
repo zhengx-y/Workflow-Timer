@@ -68,6 +68,9 @@ namespace Workflow_Timer.Views
             FocusCheck.IsChecked = settings.FocusGrabberEnabled;
             IntervalBox.Text = settings.FocusGrabberIntervalMinutes.ToString();
             SnoozeBox.Text = settings.SnoozeMinutes.ToString();
+            WorkSoundCheck.IsChecked = settings.WorkCompletionSoundEnabled;
+            BreakSoundCheck.IsChecked = settings.BreakCompletionSoundEnabled;
+            ReminderSoundCheck.IsChecked = settings.FocusReminderSoundEnabled;
             ErrorText.Text = string.Empty;
         }
 
@@ -88,6 +91,9 @@ namespace Workflow_Timer.Views
             candidate.FocusGrabberEnabled = FocusCheck.IsChecked == true;
             candidate.FocusGrabberIntervalMinutes = interval;
             candidate.SnoozeMinutes = snooze;
+            candidate.WorkCompletionSoundEnabled = WorkSoundCheck.IsChecked == true;
+            candidate.BreakCompletionSoundEnabled = BreakSoundCheck.IsChecked == true;
+            candidate.FocusReminderSoundEnabled = ReminderSoundCheck.IsChecked == true;
 
             try
             {

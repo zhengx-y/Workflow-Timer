@@ -31,6 +31,8 @@ namespace Workflow_Timer.Viewmodels
         private readonly SettingsService _settingsService;
         private readonly StartupService _startupService = new();
         private readonly FocusReminderService _focusReminder = new();
+        private readonly NotificationService _notifications = new();
+        private bool _suppressInitialReminderSound;
         public TodoViewModel Todo { get; }
         private readonly MotivationService _motivationService = new();
         public string MotivationQuoteText { get; private set; } = string.Empty;
@@ -345,6 +347,8 @@ namespace Workflow_Timer.Viewmodels
             _workflowTimer.Tick += WorkflowTimer_Tick;
             _workflowTimer.SessionCompleted += WorkflowTimer_SessionCompleted;
             _workflowTimer.WorkCompleted += WorkflowTimer_WorkCompleted;
+            _workflowTimer.BreakCompleted += (_, _) =>
+                _notifications.Notify(NotificationType.BreakCompleted, CurrentSettings);
 
             SnoozeReminderCommand = new RelayCommand(_focusReminder.Snooze);
             DismissReminderCommand = new RelayCommand(_focusReminder.Dismiss);
@@ -357,7 +361,11 @@ namespace Workflow_Timer.Viewmodels
                 OnPropertyChanged(nameof(FocusReminderIntervalText));
             };
             _focusReminder.ReminderDue += (_, _) =>
+            {
+                if (!_suppressInitialReminderSound)
+                    _notifications.Notify(NotificationType.FocusReminder, CurrentSettings);
                 FocusReminderRequested?.Invoke(this, EventArgs.Empty);
+            };
             ConfigureFocusReminder();
 
             // Persist unfinished work if Windows/the user closes the app normally.
@@ -741,6 +749,7 @@ namespace Workflow_Timer.Viewmodels
         private void WorkflowTimer_WorkCompleted(object? sender, EventArgs e)
         {
             RecordWorkIfNeeded(true);
+            _notifications.Notify(NotificationType.WorkCompleted, CurrentSettings);
         }
 
         private void RecordWorkIfNeeded(bool completed)
@@ -783,7 +792,18 @@ namespace Workflow_Timer.Viewmodels
             _overlayService.Blink();
 
             NotifyTimerProperties();
-            _focusReminder.Begin();
+            // Avoid a duplicate beep when the first reminder coincides with completion.
+            _suppressInitialReminderSound = _workflowTimer.CurrentSession?.BreakDuration == TimeSpan.Zero
+                ? CurrentSettings.WorkCompletionSoundEnabled
+                : CurrentSettings.BreakCompletionSoundEnabled;
+            try
+            {
+                _focusReminder.Begin();
+            }
+            finally
+            {
+                _suppressInitialReminderSound = false;
+            }
         }
 
         private void SchedulerService_ActionTriggered(

@@ -14,6 +14,9 @@ namespace Workflow_Timer.Models
         public bool FocusGrabberEnabled { get; set; } = false;
         public int FocusGrabberIntervalMinutes { get; set; } = 5;
         public int SnoozeMinutes { get; set; } = 10;
+        public bool WorkCompletionSoundEnabled { get; set; } = true;
+        public bool BreakCompletionSoundEnabled { get; set; } = true;
+        public bool FocusReminderSoundEnabled { get; set; } = true;
 
         public List<HotkeyBinding> Hotkeys { get; set; } = HotkeyBinding.CreateDefaults();
 
