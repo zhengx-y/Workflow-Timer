@@ -56,7 +56,7 @@ namespace Workflow_Timer
         {
             base.OnClosing(e);
             if (!e.Cancel && DataContext is MainViewModel pending &&
-                !pending.ResolvePendingPresetEdits())
+                !pending.ResolvePendingEdits())
                 e.Cancel = true;
             if (!e.Cancel)
             {

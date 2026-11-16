@@ -9,6 +9,7 @@ using Workflow_Timer.Services.TimerEngine;
 using Workflow_Timer.Services.System;
 using System.Linq;
 using Workflow_Timer.Services.Storage;
+using Workflow_Timer.Services.Motivation;
 using System.Windows;
 using System.Windows.Input;
 using System.Globalization;
@@ -30,6 +31,15 @@ namespace Workflow_Timer.Viewmodels
         private readonly SettingsService _settingsService;
         private readonly StartupService _startupService = new();
         private readonly FocusReminderService _focusReminder = new();
+        private readonly MotivationService _motivationService = new();
+        public string MotivationQuoteText { get; private set; } = string.Empty;
+        public ICommand NextMotivationQuoteCommand { get; }
+
+        private void NextMotivationQuote()
+        {
+            MotivationQuoteText = _motivationService.GetRandomQuote();
+            OnPropertyChanged(nameof(MotivationQuoteText));
+        }
         public Settings CurrentSettings { get; private set; } = new();
         public string? SettingsLoadWarning { get; private set; }
         public bool IsFocusReminderVisible => _focusReminder.IsVisible;
@@ -85,6 +95,7 @@ namespace Workflow_Timer.Viewmodels
 
         private bool CanRunSelectedPreset => SelectedPreset != null &&
             !HasUnsavedPresetChanges && !_resolvingPresetEdits &&
+            !HasUnsavedActionChanges && !_resolvingActionEdits &&
             SelectedPreset.Session.WorkDuration > TimeSpan.Zero &&
             SelectedPreset.Session.BreakDuration >= TimeSpan.Zero;
         private ScheduledActionViewModel? _selectedScheduledAction;
@@ -93,6 +104,28 @@ namespace Workflow_Timer.Viewmodels
         private string _actionOffsetText = "00:00:00";
         private ActionType _selectedActionType = ActionType.Website;
         private bool _actionEnabled = true;
+        private bool _refreshingScheduledActions;
+        private bool _resolvingActionEdits;
+
+        public bool HasUnsavedActionChanges
+        {
+            get
+            {
+                var action = SelectedScheduledAction?.Action;
+                return ActionName != (action?.Name ?? string.Empty) ||
+                    ActionTarget != (action?.Target ?? string.Empty) ||
+                    SelectedActionType != (action?.ActionType ?? ActionType.Website) ||
+                    ActionEnabled != (action?.Enabled ?? true) ||
+                    !TimeSpan.TryParse(ActionOffsetText, CultureInfo.InvariantCulture, out var offset) ||
+                    offset != (action?.OffsetFromStart ?? TimeSpan.Zero);
+            }
+        }
+
+        private void NotifyActionDraft()
+        {
+            OnPropertyChanged(nameof(HasUnsavedActionChanges));
+            TimerCommands?.RefreshAvailability();
+        }
 
         public Array ActionTypes { get; } = Enum.GetValues<ActionType>();
 
@@ -118,6 +151,13 @@ namespace Workflow_Timer.Viewmodels
         public string BestDayDateText { get => _bestDayDateText; private set { _bestDayDateText = value; OnPropertyChanged(); } }
         public string RecordResetText { get => _recordResetText; private set { _recordResetText = value; OnPropertyChanged(); } }
         public ICommand ClearPersonalBestCommand { get; }
+        public ICommand ClearOldRecentSessionsCommand { get; }
+        private string _recentSessionAgeDays = "30";
+        public string RecentSessionAgeDays
+        {
+            get => _recentSessionAgeDays;
+            set { _recentSessionAgeDays = value; OnPropertyChanged(); }
+        }
 
         public bool CanBrowseActionTarget =>
             SelectedActionType != ActionType.Website;
@@ -127,30 +167,50 @@ namespace Workflow_Timer.Viewmodels
             get => _selectedScheduledAction;
             set
             {
-                if (ReferenceEquals(_selectedScheduledAction, value))
+                if (_refreshingScheduledActions || ReferenceEquals(_selectedScheduledAction, value))
                     return;
-
-                _selectedScheduledAction = value;
-                OnPropertyChanged();
-
-                if (value == null)
+                var requested = value?.Action;
+                if (!ResolvePendingActionEdits())
                 {
-                    ClearActionFields();
+                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                        OnPropertyChanged(nameof(SelectedScheduledAction))));
                     return;
                 }
-
-                ActionName = value.Action.Name;
-                SelectedActionType = value.Action.ActionType;
-                ActionTarget = value.Action.Target;
-                ActionOffsetText = value.Action.OffsetFromStart.ToString("c", CultureInfo.InvariantCulture);
-                ActionEnabled = value.Action.Enabled;
+                SetActionSelection(requested == null ? null : FindScheduledActionViewModel(requested));
+                // Saving a draft can rebuild the list while WPF is setting this property.
+                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
+                    OnPropertyChanged(nameof(SelectedScheduledAction))));
             }
+        }
+
+        private void SetActionSelection(ScheduledActionViewModel? value)
+        {
+            _selectedScheduledAction = value;
+            ResetActionDraft();
+            OnPropertyChanged(nameof(SelectedScheduledAction));
+        }
+
+        private void ResetActionDraft()
+        {
+            var action = SelectedScheduledAction?.Action;
+            _actionName = action?.Name ?? string.Empty;
+            _selectedActionType = action?.ActionType ?? ActionType.Website;
+            _actionTarget = action?.Target ?? string.Empty;
+            _actionOffsetText = action?.OffsetFromStart.ToString("c", CultureInfo.InvariantCulture) ?? "00:00:00";
+            _actionEnabled = action?.Enabled ?? true;
+            OnPropertyChanged(nameof(ActionName));
+            OnPropertyChanged(nameof(SelectedActionType));
+            OnPropertyChanged(nameof(CanBrowseActionTarget));
+            OnPropertyChanged(nameof(ActionTarget));
+            OnPropertyChanged(nameof(ActionOffsetText));
+            OnPropertyChanged(nameof(ActionEnabled));
+            NotifyActionDraft();
         }
 
         public string ActionName
         {
             get => _actionName;
-            set { _actionName = value; OnPropertyChanged(); }
+            set { _actionName = value; OnPropertyChanged(); NotifyActionDraft(); }
         }
 
         public ActionType SelectedActionType
@@ -164,25 +224,26 @@ namespace Workflow_Timer.Viewmodels
                 _selectedActionType = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CanBrowseActionTarget));
+                NotifyActionDraft();
             }
         }
 
         public string ActionTarget
         {
             get => _actionTarget;
-            set { _actionTarget = value; OnPropertyChanged(); }
+            set { _actionTarget = value; OnPropertyChanged(); NotifyActionDraft(); }
         }
 
         public string ActionOffsetText
         {
             get => _actionOffsetText;
-            set { _actionOffsetText = value; OnPropertyChanged(); }
+            set { _actionOffsetText = value; OnPropertyChanged(); NotifyActionDraft(); }
         }
 
         public bool ActionEnabled
         {
             get => _actionEnabled;
-            set { _actionEnabled = value; OnPropertyChanged(); }
+            set { _actionEnabled = value; OnPropertyChanged(); NotifyActionDraft(); }
         }
 
         public ObservableCollection<Preset> Presets { get; }
@@ -197,7 +258,7 @@ namespace Workflow_Timer.Viewmodels
                 if (_selectedPreset == value)
                     return;
 
-                if (value == null || !CanEditSettings || !ResolvePendingPresetEdits())
+                if (value == null || !CanEditSettings || !ResolvePendingEdits())
                 {
                     // Restore the ComboBox selection after its TwoWay update finishes.
                     Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
@@ -215,8 +276,6 @@ namespace Workflow_Timer.Viewmodels
             ResetPresetDraft();
 
             RefreshScheduledActions();
-            SelectedScheduledAction = null;
-            ClearActionFields();
 
             OnPropertyChanged(nameof(SelectedPreset));
         }
@@ -264,6 +323,8 @@ namespace Workflow_Timer.Viewmodels
 
         public MainViewModel()
         {
+            NextMotivationQuoteCommand = new RelayCommand(NextMotivationQuote);
+            NextMotivationQuote();
             _settingsService = new SettingsService(new AppDataPathService());
             try
             {
@@ -318,6 +379,7 @@ namespace Workflow_Timer.Viewmodels
 
             _historyService = new HistoryService(new AppDataPathService());
             ClearPersonalBestCommand = new RelayCommand(ClearPersonalBest);
+            ClearOldRecentSessionsCommand = new RelayCommand(ClearOldRecentSessions);
             RefreshHistory();
 
             var savedPresets = _presetService.LoadPresets();
@@ -386,8 +448,8 @@ namespace Workflow_Timer.Viewmodels
             RemoveScheduledActionCommand = new RelayCommand(RemoveScheduledAction);
             ClearActionEditorCommand = new RelayCommand(() =>
             {
-                SelectedScheduledAction = null;
-                ClearActionFields();
+                if (CanEditActions() && ResolvePendingActionEdits())
+                    SetActionSelection(null);
             });
         }
 
@@ -533,6 +595,7 @@ namespace Workflow_Timer.Viewmodels
                 SelectedPreset.Session.Actions);
 
             _workflowTimer.Start(SelectedPreset.Session);
+            NextMotivationQuote();
 
             UpdateOverlay();
 
@@ -608,6 +671,7 @@ namespace Workflow_Timer.Viewmodels
             {
                 _workStartedAt = DateTime.Now;
                 _workRecorded = false;
+                NextMotivationQuote();
             }
 
             UpdateOverlay();
@@ -711,6 +775,7 @@ namespace Workflow_Timer.Viewmodels
     object? sender,
     EventArgs e)
         {
+            NextMotivationQuote();
             UpdateOverlay();
 
             _overlayService.Blink();
@@ -743,20 +808,24 @@ namespace Workflow_Timer.Viewmodels
                 SelectedPreset.Session.Actions);
         }
 
-        private void RefreshScheduledActions()
+        private void RefreshScheduledActions(ScheduledAction? selected = null)
         {
-            ScheduledActions.Clear();
-
-            if (SelectedPreset == null)
-                return;
-
-            foreach (var action in SelectedPreset.Session.Actions)
+            _refreshingScheduledActions = true;
+            try
             {
-                ScheduledActions.Add(
-                    new ScheduledActionViewModel(action));
+                ScheduledActions.Clear();
+                if (SelectedPreset != null)
+                {
+                    foreach (var action in SelectedPreset.Session.Actions)
+                        ScheduledActions.Add(new ScheduledActionViewModel(action));
+                }
+                SetActionSelection(selected == null ? null : FindScheduledActionViewModel(selected));
+                OnPropertyChanged(nameof(ScheduledActions));
             }
-
-            OnPropertyChanged(nameof(ScheduledActions));
+            finally
+            {
+                _refreshingScheduledActions = false;
+            }
         }
 
         private void ResetScheduledActions()
@@ -783,7 +852,7 @@ namespace Workflow_Timer.Viewmodels
 
         private void LoadPreset()
         {
-            if (!CanEditSettings || SelectedPreset == null)
+            if (!CanEditSettings || SelectedPreset == null || !ResolvePendingEdits())
                 return;
 
             StopTimer();
@@ -923,9 +992,42 @@ namespace Workflow_Timer.Viewmodels
             }
         }
 
+        public bool ResolvePendingEdits() =>
+            ResolvePendingActionEdits() && ResolvePendingPresetEdits();
+
+        private bool ResolvePendingActionEdits()
+        {
+            if (_resolvingActionEdits || _resolvingPresetEdits)
+                return false;
+            if (!HasUnsavedActionChanges)
+                return true;
+            _resolvingActionEdits = true;
+            NotifyActionDraft();
+            try
+            {
+                var result = MessageBox.Show(Application.Current.MainWindow,
+                    "Save changes to the scheduled action?\n\nYes: Save\nNo: Discard\nCancel: Keep editing",
+                    "Unsaved scheduled action", MessageBoxButton.YesNoCancel,
+                    MessageBoxImage.Question, MessageBoxResult.Cancel);
+                if (result == MessageBoxResult.Yes)
+                    return TrySaveActionDraft(SelectedScheduledAction == null);
+                if (result == MessageBoxResult.No)
+                {
+                    ResetActionDraft();
+                    return true;
+                }
+                return false;
+            }
+            finally
+            {
+                _resolvingActionEdits = false;
+                NotifyActionDraft();
+            }
+        }
+
         private void CreatePreset()
         {
-            if (!CanEditSettings || !ResolvePendingPresetEdits())
+            if (!CanEditSettings || !ResolvePendingEdits())
                 return;
 
             var preset = new Preset
@@ -962,7 +1064,7 @@ namespace Workflow_Timer.Viewmodels
             if (result != MessageBoxResult.Yes)
                 return;
 
-            if (!ResolvePendingPresetEdits())
+            if (!ResolvePendingEdits())
                 return;
 
             int index = Presets.IndexOf(SelectedPreset);
@@ -979,16 +1081,7 @@ namespace Workflow_Timer.Viewmodels
             if (SelectedPreset == null)
                 return false;
 
-            return CanEditSettings;
-        }
-
-        private void ClearActionFields()
-        {
-            ActionName = string.Empty;
-            SelectedActionType = ActionType.Website;
-            ActionTarget = string.Empty;
-            ActionOffsetText = "00:00:00";
-            ActionEnabled = true;
+            return CanEditSettings && !_resolvingActionEdits && !_resolvingPresetEdits;
         }
 
         private void BrowseActionTarget()
@@ -1122,23 +1215,8 @@ namespace Workflow_Timer.Viewmodels
 
         private void AddScheduledAction()
         {
-            if (!CanEditActions() || !TryReadActionFields(out var offset, out var target))
-                return;
-
-            var action = new ScheduledAction
-            {
-                Name = ActionName.Trim(),
-                ActionType = SelectedActionType,
-                Target = target,
-                OffsetFromStart = offset,
-                Enabled = ActionEnabled
-            };
-
-            SelectedPreset!.Session.Actions.Add(action);
-            SortSelectedPresetActions();
-            PersistPresets();
-            RefreshScheduledActions();
-            SelectedScheduledAction = ScheduledActions.First(x => ReferenceEquals(x.Action, action));
+            if (CanEditActions())
+                TrySaveActionDraft(true);
         }
 
         private void ToggleScheduledActionEnabled(object? value)
@@ -1146,7 +1224,7 @@ namespace Workflow_Timer.Viewmodels
             if (value is not ScheduledActionViewModel item)
                 return;
 
-            if (!CanEditSettings)
+            if (!CanEditActions())
                 return;
 
             if (SelectedPreset == null ||
@@ -1154,33 +1232,80 @@ namespace Workflow_Timer.Viewmodels
                 return;
 
             var action = item.Action;
+            bool oldEnabled = action.Enabled;
+            bool syncEditor = ReferenceEquals(SelectedScheduledAction?.Action, action) &&
+                ActionEnabled == oldEnabled;
             action.Enabled = !action.Enabled;
 
-            PersistPresets();
-            RefreshScheduledActions();
-
-            // Restore selection and sync the editor checkbox to the saved value.
-            SelectedScheduledAction = ScheduledActions.First(
-                x => ReferenceEquals(x.Action, action));
+            if (!TryPersistActionChanges(() => action.Enabled = oldEnabled))
+            {
+                item.RefreshEnabled();
+                return;
+            }
+            item.RefreshEnabled();
+            if (syncEditor)
+                ActionEnabled = action.Enabled;
+            NotifyActionDraft();
         }
 
         private void UpdateScheduledAction()
         {
-            if (!CanEditActions() || SelectedScheduledAction == null ||
-                !TryReadActionFields(out var offset, out var target))
-                return;
+            if (CanEditActions() && SelectedScheduledAction != null)
+                TrySaveActionDraft(false);
+        }
 
-            var action = SelectedScheduledAction.Action;
+        private bool TrySaveActionDraft(bool add)
+        {
+            if (SelectedPreset == null || (!add && SelectedScheduledAction == null) ||
+                !TryReadActionFields(out var offset, out var target))
+                return false;
+
+            var session = SelectedPreset.Session;
+            var originalOrder = session.Actions.ToList();
+            var action = add ? new ScheduledAction() : SelectedScheduledAction!.Action;
+            var oldName = action.Name;
+            var oldType = action.ActionType;
+            var oldTarget = action.Target;
+            var oldOffset = action.OffsetFromStart;
+            var oldEnabled = action.Enabled;
             action.Name = ActionName.Trim();
             action.ActionType = SelectedActionType;
             action.Target = target;
             action.OffsetFromStart = offset;
             action.Enabled = ActionEnabled;
 
+            if (add)
+                session.Actions.Add(action);
             SortSelectedPresetActions();
-            PersistPresets();
-            RefreshScheduledActions();
-            SelectedScheduledAction = ScheduledActions.First(x => ReferenceEquals(x.Action, action));
+            if (!TryPersistActionChanges(() =>
+            {
+                session.Actions = originalOrder;
+                action.Name = oldName;
+                action.ActionType = oldType;
+                action.Target = oldTarget;
+                action.OffsetFromStart = oldOffset;
+                action.Enabled = oldEnabled;
+            }))
+                return false;
+
+            RefreshScheduledActions(action);
+            return true;
+        }
+
+        private bool TryPersistActionChanges(Action rollback)
+        {
+            try
+            {
+                PersistPresets();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                rollback();
+                MessageBox.Show("Could not save scheduled actions: " + ex.Message,
+                    "Save failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
+            }
         }
 
         private void RemoveScheduledAction()
@@ -1190,7 +1315,8 @@ namespace Workflow_Timer.Viewmodels
 
             var action = SelectedScheduledAction.Action;
             var confirmation = MessageBox.Show(
-                $"Remove scheduled action \"{action.Name}\"?",
+                $"Remove scheduled action \"{action.Name}\"?" +
+                (HasUnsavedActionChanges ? "\n\nUnsaved edits to this action will also be discarded." : ""),
                 "Confirm Action Removal",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question,
@@ -1199,11 +1325,13 @@ namespace Workflow_Timer.Viewmodels
             if (confirmation != MessageBoxResult.Yes)
                 return;
 
-            SelectedPreset!.Session.Actions.Remove(action);
+            var session = SelectedPreset!.Session;
+            var originalOrder = session.Actions.ToList();
+            session.Actions.Remove(action);
             SortSelectedPresetActions();
-            PersistPresets();
+            if (!TryPersistActionChanges(() => session.Actions = originalOrder))
+                return;
             RefreshScheduledActions();
-            SelectedScheduledAction = null;
         }
 
         private static string FormatWork(TimeSpan duration)
@@ -1252,7 +1380,8 @@ namespace Workflow_Timer.Viewmodels
             }
 
             RecentHistory.Clear();
-            foreach (var entry in entries.OrderByDescending(e => e.StartedAt))
+            foreach (var entry in entries.Where(e => !e.HiddenFromRecentSessions)
+                .OrderByDescending(e => e.StartedAt))
             {
                 RecentHistory.Add(new HistoryDisplayRow
                 {
@@ -1260,6 +1389,47 @@ namespace Workflow_Timer.Viewmodels
                     Detail = $"{entry.StartedAt:yyyy-MM-dd HH:mm} · {(entry.Completed ? "Completed" : "Stopped")}",
                     Duration = FormatWork(entry.WorkDuration)
                 });
+            }
+        }
+
+        private void ClearOldRecentSessions()
+        {
+            if (!int.TryParse(RecentSessionAgeDays.Trim(), NumberStyles.None,
+                CultureInfo.InvariantCulture, out int days) || days <= 0)
+            {
+                MessageBox.Show("Enter a positive whole number of days.",
+                    "Invalid duration", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            try
+            {
+                int count = _historyService.CountRecentSessionsOlderThan(today, days);
+                if (count == 0)
+                {
+                    MessageBox.Show("No visible sessions are older than that many days.",
+                        "Recent sessions", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                var confirmation = MessageBox.Show(
+                    $"Clear {count} session(s) older than {days} calendar day(s) from Recent Sessions?\n\n" +
+                    "Daily totals, personal best and all recorded work will remain unchanged.",
+                    "Clear recent sessions", MessageBoxButton.YesNo,
+                    MessageBoxImage.Question, MessageBoxResult.No);
+                if (confirmation != MessageBoxResult.Yes)
+                    return;
+
+                int cleared = _historyService.ClearRecentSessionsOlderThan(today, days);
+                RefreshHistory();
+                MessageBox.Show($"Cleared {cleared} session(s) from Recent Sessions.",
+                    "Recent sessions", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not clear recent sessions: " + ex.Message,
+                    "History cleanup failed", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

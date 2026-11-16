@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Workflow_Timer.Models
 {
-    class MotivationQuote
+    public sealed class MotivationQuote
     {
+        public string Text { get; set; } = string.Empty;
     }
 }

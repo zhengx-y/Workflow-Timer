@@ -31,6 +31,48 @@ namespace Workflow_Timer.Services.Storage
             _storage.Save(_paths.HistoryPath, entries);
         }
 
+        private static bool IsOlderVisibleSession(HistoryEntry entry, DateOnly today, int days) =>
+            !entry.HiddenFromRecentSessions &&
+            today.DayNumber - DateOnly.FromDateTime(entry.StartedAt).DayNumber > days;
+
+        public int CountRecentSessionsOlderThan(DateOnly today, int days)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(days);
+            return LoadHistory().Count(entry => IsOlderVisibleSession(entry, today, days));
+        }
+
+        // Preserve the source entries for daily totals, records and all-time work.
+        public int ClearRecentSessionsOlderThan(DateOnly today, int days)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(days);
+            var entries = LoadHistory();
+            var matches = entries.Where(entry => IsOlderVisibleSession(entry, today, days)).ToList();
+            if (matches.Count == 0)
+                return 0;
+
+            foreach (var entry in matches)
+                entry.HiddenFromRecentSessions = true;
+
+            // Write next to the original and replace it only after serialization succeeds.
+            string path = _paths.HistoryPath;
+            string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                _storage.Save(temporary, entries);
+                global::System.IO.File.Move(temporary, path, overwrite: true);
+            }
+            finally
+            {
+                if (global::System.IO.File.Exists(temporary))
+                {
+                    try { global::System.IO.File.Delete(temporary); }
+                    catch (global::System.IO.IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+            }
+            return matches.Count;
+        }
+
         // All elapsed work is credited to the date the session started.
         // Splitting work across midnight is intentionally deferred.
         public TimeSpan GetDailyTotal(DateOnly date)

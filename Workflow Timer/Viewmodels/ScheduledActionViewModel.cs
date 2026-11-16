@@ -64,6 +64,12 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(StatusText));
         }
 
+        public void RefreshEnabled()
+        {
+            OnPropertyChanged(nameof(Enabled));
+            OnPropertyChanged(nameof(StatusText));
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         private void OnPropertyChanged(

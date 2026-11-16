@@ -9,5 +9,7 @@ namespace Workflow_Timer.Models
         public string PresetName { get; set; } = string.Empty;
         public TimeSpan WorkDuration { get; set; }
         public bool Completed { get; set; }
+        // Hidden entries still contribute to all history statistics.
+        public bool HiddenFromRecentSessions { get; set; }
     }
 }

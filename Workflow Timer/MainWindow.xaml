@@ -61,7 +61,10 @@
                     <views:ScheduledActionControl/>
                 </StackPanel>
 
-                <views:HistoryControl Grid.Column="1" VerticalAlignment="Top"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                    <views:MotivationControl/>
+                    <views:HistoryControl/>
+                </StackPanel>
             </Grid>
         </ScrollViewer>
     </DockPanel>
