@@ -1,22 +1,22 @@
 <UserControl x:Class="Workflow_Timer.Views.MainWindowControls.HistoryControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="6" Padding="12">
+    <Border Style="{StaticResource WorkflowPanelFrame}" BorderThickness="1" CornerRadius="6" Padding="12">
         <StackPanel>
             <TextBlock Text="History &amp; Records" FontSize="19" FontWeight="Bold" Margin="0,0,0,14"/>
 
-            <TextBlock Text="Today's work" Foreground="Gray"/>
+            <TextBlock Text="Today's work" Foreground="{DynamicResource WorkflowMutedBrush}"/>
             <TextBlock Text="{Binding TodayWorkText}" FontSize="27" FontWeight="SemiBold" Margin="0,0,0,12"/>
 
-            <TextBlock Text="Personal best day" Foreground="Gray"/>
+            <TextBlock Text="Personal best day" Foreground="{DynamicResource WorkflowMutedBrush}"/>
             <TextBlock Text="{Binding BestDayText}" FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="{Binding BestDayDateText}" Foreground="Gray"/>
-            <TextBlock Text="{Binding RecordResetText}" Foreground="Gray" FontSize="11" Margin="0,2,0,7"/>
+            <TextBlock Text="{Binding BestDayDateText}" Foreground="{DynamicResource WorkflowMutedBrush}"/>
+            <TextBlock Text="{Binding RecordResetText}" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="11" Margin="0,2,0,7"/>
             <Button Content="Clear Personal Best" Command="{Binding ClearPersonalBestCommand}"
                     HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,14"/>
 
             <Separator Margin="0,0,0,12"/>
-            <TextBlock Text="All recorded work" Foreground="Gray"/>
+            <TextBlock Text="All recorded work" Foreground="{DynamicResource WorkflowMutedBrush}"/>
             <TextBlock Text="{Binding AllTimeWorkText}" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,14"/>
 
             <TextBlock Text="Daily totals" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
@@ -25,7 +25,7 @@
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      Margin="0,0,0,14">
                 <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     </Style>
                 </ListBox.ItemContainerStyle>
@@ -38,7 +38,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Detail}" Foreground="Gray" FontSize="11"/>
+                                <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="11"/>
                             </StackPanel>
                             <TextBlock Grid.Column="1" Text="{Binding Duration}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </Grid>
@@ -51,7 +51,7 @@
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     </Style>
                 </ListBox.ItemContainerStyle>
@@ -64,7 +64,7 @@
                             </Grid.ColumnDefinitions>
                             <StackPanel>
                                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
-                                <TextBlock Text="{Binding Detail}" Foreground="Gray" FontSize="11" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="11" TextWrapping="Wrap"/>
                             </StackPanel>
                             <TextBlock Grid.Column="1" Text="{Binding Duration}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                         </Grid>
@@ -79,7 +79,7 @@
                 <Button Content="Clear" Padding="10,4" Command="{Binding ClearOldRecentSessionsCommand}"/>
             </WrapPanel>
             <TextBlock Text="Daily totals and records are preserved."
-                       Foreground="Gray" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/>
+                       Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/>
         </StackPanel>
     </Border>
 </UserControl>

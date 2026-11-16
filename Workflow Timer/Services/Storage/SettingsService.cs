@@ -52,6 +52,8 @@ namespace Workflow_Timer.Services.Storage
 
         public static void Validate(Settings settings)
         {
+            if (!Enum.IsDefined(settings.Theme))
+                throw new InvalidDataException("Select a valid theme.");
             if (!Enum.IsDefined(settings.OverlayPosition))
                 throw new InvalidDataException("Select a valid widget position.");
             if (settings.FocusGrabberIntervalMinutes < 1 || settings.FocusGrabberIntervalMinutes > 1440)

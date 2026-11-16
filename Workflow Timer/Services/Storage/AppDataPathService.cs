@@ -5,6 +5,8 @@ namespace Workflow_Timer.Services.Storage
     public class AppDataPathService
     {
         private readonly string _root;
+        public string RootPath => _root;
+        public string SelectedPresetPath => Path.Combine(CreateFolder("presets"), "selected.json");
 
 
         public AppDataPathService()

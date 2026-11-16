@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="TodoVisibility"/>
-        <Style x:Key="TodoListStyle" TargetType="ListBox">
+        <Style x:Key="TodoListStyle" TargetType="ListBox" BasedOn="{StaticResource {x:Type ListBox}}">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
@@ -13,7 +13,7 @@
             <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel"/>
             <Setter Property="ItemContainerStyle">
                 <Setter.Value>
-                    <Style TargetType="ListBoxItem">
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Padding" Value="0"/>
                     </Style>
@@ -21,7 +21,7 @@
             </Setter>
         </Style>
         <DataTemplate x:Key="TodoItemTemplate">
-            <Border BorderBrush="#D4D4D4" BorderThickness="1" CornerRadius="4" Padding="6" Margin="3">
+            <Border BorderBrush="{DynamicResource WorkflowCardBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="6" Margin="3">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -48,7 +48,7 @@
             </Border>
         </DataTemplate>
     </UserControl.Resources>
-    <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="6" Padding="8">
+    <Border Style="{StaticResource WorkflowPanelFrame}" BorderThickness="1" CornerRadius="6" Padding="8">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -65,7 +65,7 @@
                 <TextBlock Text="To-Do List" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
             </DockPanel>
             <StackPanel Grid.Row="1" Margin="0,0,0,10">
-                <TextBlock Text="Search titles" Foreground="Gray" FontSize="11"/>
+                <TextBlock Text="Search titles" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="11"/>
                 <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinHeight="26"/>
             </StackPanel>
             <TextBlock Grid.Row="2" Text="Active tasks" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -77,7 +77,7 @@
                      Style="{StaticResource TodoListStyle}" ItemTemplate="{StaticResource TodoItemTemplate}"
                      IsEnabled="{Binding CanEditTasks}"/>
             <StackPanel Grid.Row="6" Margin="0,6,0,0">
-                <TextBlock Text="{Binding StorageStatus}" TextWrapping="Wrap" FontSize="11" Foreground="Gray"/>
+                <TextBlock Text="{Binding StorageStatus}" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource WorkflowMutedBrush}"/>
                 <Button Content="Retry save" Command="{Binding Commands.RetrySaveCommand}" Margin="0,4,0,0"
                         Visibility="{Binding HasUnsavedChanges, Converter={StaticResource TodoVisibility}}"/>
             </StackPanel>

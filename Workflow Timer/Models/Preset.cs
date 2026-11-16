@@ -3,6 +3,7 @@
     public class Preset : global::System.ComponentModel.INotifyPropertyChanged
     {
         private string _name = string.Empty;
+        public global::System.Guid Id { get; set; }
 
         public string Name
         {

@@ -25,6 +25,8 @@ namespace Workflow_Timer
     public partial class MainWindow : Window
     {
         private HotkeyService? _hotkeyService;
+        private TrayService? _trayService;
+        private bool _restoringFromTray;
         private bool _settingsOpen;
         private bool _dispatchingHotkey;
         private string? _hotkeyWarning;
@@ -34,7 +36,7 @@ namespace Workflow_Timer
         private const double LeftPanelMax = 480;
         private const double RightPanelMin = 320;
         private const double RightPanelMax = 550;
-        private const double CenterPanelMin = 440;
+        private const double CenterPanelMin = 500;
         private const double SplitterWidth = 8;
         private double _leftExpandedWidth = LeftPanelMin;
         private double _rightExpandedWidth = RightPanelMin;
@@ -145,10 +147,16 @@ namespace Workflow_Timer
 
             var viewModel = new MainViewModel();
             DataContext = viewModel;
+            viewModel.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(MainViewModel.CurrentSettings))
+                    UpdateTray(viewModel);
+            };
             viewModel.FocusReminderRequested += (_, _) => FocusReminderRequested();
             SourceInitialized += (_, _) => InitializeHotkeys();
             Loaded += (_, _) =>
             {
+                UpdateTray(viewModel);
                 if (DataContext is MainViewModel vm && vm.SettingsLoadWarning is string warning)
                     MessageBox.Show(this, warning, "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
                 if (_hotkeyWarning != null)
@@ -163,10 +171,11 @@ namespace Workflow_Timer
         protected override void OnClosing(global::System.ComponentModel.CancelEventArgs e)
         {
             base.OnClosing(e);
-            if (!e.Cancel && DataContext is MainViewModel pending &&
+            if (DataManagementService.ResetInProgress) e.Cancel = false;
+            if (!e.Cancel && !DataManagementService.ResetInProgress && DataContext is MainViewModel pending &&
                 !pending.ResolvePendingEdits())
                 e.Cancel = true;
-            if (!e.Cancel && DataContext is MainViewModel tasks && !tasks.Todo.TrySave())
+            if (!e.Cancel && !DataManagementService.ResetInProgress && DataContext is MainViewModel tasks && !tasks.Todo.TrySave())
             {
                 MessageBox.Show(this, "Task changes could not be saved. Retry saving before closing.",
                     "Unsaved tasks", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -178,6 +187,7 @@ namespace Workflow_Timer
                 if (DataContext is MainViewModel vm)
                     vm.ShutdownFocusReminders();
                 _hotkeyService?.Dispose();
+                _trayService?.Dispose();
             }
         }
 
@@ -191,7 +201,50 @@ namespace Workflow_Timer
                 return;
             }
             _reminderFocusDeferred = false;
-            WindowFocusService.BringIntoFocus(this);
+            RestoreMainWindow();
+        }
+
+        private void RestoreMainWindow()
+        {
+            if (_closing || _restoringFromTray) return;
+            _restoringFromTray = true;
+            try
+            {
+                WindowFocusService.BringIntoFocus(this);
+            }
+            finally
+            {
+                _restoringFromTray = false;
+            }
+        }
+
+        private void UpdateTray(MainViewModel vm)
+        {
+            if (_closing) return;
+            try
+            {
+                if (vm.CurrentSettings.MinimizeToTray && _trayService == null)
+                    _trayService = new TrayService(this, vm,
+                        () => !_closing && !_settingsOpen && IsEnabled, RestoreMainWindow);
+                _trayService?.SetEnabled(vm.CurrentSettings.MinimizeToTray);
+                if (!vm.CurrentSettings.MinimizeToTray && !IsVisible && IsLoaded)
+                    RestoreMainWindow();
+            }
+            catch (Exception ex)
+            {
+                _trayService?.Dispose();
+                _trayService = null;
+                MessageBox.Show(this, "System tray is unavailable. Normal minimizing remains active.\n\n" + ex.Message,
+                    "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        protected override void OnStateChanged(EventArgs e)
+        {
+            base.OnStateChanged(e);
+            if (!_closing && !_restoringFromTray && WindowState == WindowState.Minimized && _trayService != null &&
+                DataContext is MainViewModel vm && vm.CurrentSettings.MinimizeToTray)
+                Hide();
         }
 
         private void InitializeHotkeys()
@@ -222,10 +275,7 @@ namespace Workflow_Timer
             {
                 if (action == HotkeyAction.ShowMainWindow)
                 {
-                    if (!IsVisible) Show();
-                    if (WindowState == WindowState.Minimized)
-                        WindowState = WindowState.Normal;
-                    Activate();
+                    RestoreMainWindow();
                 }
                 else
                     vm.ExecuteHotkey(action);
@@ -296,6 +346,19 @@ namespace Workflow_Timer
                     _reminderFocusDeferred = false;
                     if (vm.IsFocusReminderAttentionActive)
                         FocusReminderRequested();
+                }
+            }
+            if (settings.ResetDataRequested && vm.CanEditSettings)
+            {
+                try
+                {
+                    DataManagementService.PrepareReset();
+                    Close();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "Could not reset data: " + ex.Message,
+                        "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }

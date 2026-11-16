@@ -9,8 +9,17 @@ namespace Workflow_Timer.Services.System
     {
         public static void BringIntoFocus(Window window)
         {
+            bool wasHidden = !window.IsVisible;
+            bool wasMinimized = window.WindowState == WindowState.Minimized;
             if (!window.IsVisible)
                 window.Show();
+
+            // Restoring the WPF property alone can leave the native HWND iconic
+            // after Hide() was called from the minimized state.
+            IntPtr handle = new WindowInteropHelper(window).Handle;
+            if (handle != IntPtr.Zero && (wasHidden || wasMinimized || IsIconic(handle)))
+                ShowWindow(handle, 9); // SW_RESTORE
+
             if (window.WindowState == WindowState.Minimized)
                 window.WindowState = WindowState.Normal;
 
@@ -49,5 +58,13 @@ namespace Workflow_Timer.Services.System
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool FlashWindowEx(ref FlashInfo info);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool IsIconic(IntPtr hWnd);
     }
 }

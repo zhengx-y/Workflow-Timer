@@ -12,6 +12,8 @@ namespace Workflow_Timer.Services.Storage
 
         public void Save<T>(string path, T data)
         {
+            if (DataManagementService.ResetInProgress)
+                throw new global::System.InvalidOperationException("Data reset is in progress.");
             JsonHelper.Save(path, data);
         }
     }

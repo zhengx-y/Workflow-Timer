@@ -2,12 +2,14 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Workflow Timer — Settings"
+        Background="{DynamicResource WorkflowWindowBrush}"
+        Foreground="{DynamicResource WorkflowTextBrush}"
         Icon="pack://application:,,,/Resources/Icons/Workflow_Timer.ico"
         Width="660" Height="740" MinWidth="520" MinHeight="380"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
     <DockPanel Margin="16">
         <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-            <TextBlock x:Name="ErrorText" Foreground="Firebrick" TextWrapping="Wrap" Margin="0,0,0,8"/>
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource WorkflowErrorBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
             <DockPanel LastChildFill="False">
                 <Button DockPanel.Dock="Left" Content="Reset defaults" Padding="10,5"
                         Command="{Binding ResetDefaultsCommand}"/>
@@ -22,10 +24,21 @@
                 <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
                 <TextBlock Text="Configure startup, widget placement, focus reminders, sounds and global keyboard shortcuts."
                            TextWrapping="Wrap" Margin="0,6,0,14"/>
+                <GroupBox Header="Appearance" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Theme"/>
+                        <ComboBox x:Name="ThemeBox" Margin="0,4,0,0"/>
+                        <TextBlock Text="The theme changes when you save settings."
+                                   TextWrapping="Wrap" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </GroupBox>
                 <GroupBox Header="Startup" Margin="0,0,0,10">
                     <StackPanel Margin="10">
                         <CheckBox x:Name="StartupCheck" Content="Start with Windows"/>
                         <TextBlock Text="Launch Workflow Timer when you sign in to Windows."
+                                   TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <CheckBox x:Name="TrayCheck" Content="Minimize to system tray" Margin="0,10,0,0"/>
+                        <TextBlock Text="Minimizing hides the window; the tray icon restores it. Closing still exits."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </GroupBox>
@@ -102,6 +115,17 @@
                         </ItemsControl>
                         <Button Content="Clear all shortcuts" HorizontalAlignment="Left" Margin="0,8,0,0"
                                 Padding="8,4" Click="ClearHotkeys_Click"/>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="Data management" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <TextBlock Text="Open the application data folder to make manual backups of your presets, tasks, history and settings."
+                                   TextWrapping="Wrap" Margin="0,0,0,6"/>
+                        <Button Content="Open Folder" Click="OpenDataFolder_Click" HorizontalAlignment="Left" Padding="10,5"/>
+                        <TextBlock Text="Delete saved application data and restart with factory defaults. This cannot be undone."
+                                   TextWrapping="Wrap" Margin="0,12,0,6"/>
+                        <Button Content="Delete Data..." Click="DeleteData_Click" HorizontalAlignment="Left" Padding="10,5"
+                                Foreground="{DynamicResource WorkflowErrorBrush}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

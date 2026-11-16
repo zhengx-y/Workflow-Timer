@@ -10,6 +10,7 @@ using Workflow_Timer.Enums;
 using Workflow_Timer.Models;
 using Workflow_Timer.Services.Storage;
 using Workflow_Timer.Helpers;
+using AppThemeMode = Workflow_Timer.Enums.ThemeMode;
 
 namespace Workflow_Timer.Views
 {
@@ -17,6 +18,7 @@ namespace Workflow_Timer.Views
     {
         private readonly Action<Settings> _saveSettings;
         private Settings _draft = new();
+        public bool ResetDataRequested { get; private set; }
 
         public HotkeyModifier[] FirstModifiers { get; } =
             new[] { HotkeyModifier.Ctrl, HotkeyModifier.Alt, HotkeyModifier.Shift, HotkeyModifier.Win };
@@ -28,6 +30,7 @@ namespace Workflow_Timer.Views
         {
             InitializeComponent();
             _saveSettings = saveSettings;
+            ThemeBox.ItemsSource = Enum.GetValues<AppThemeMode>();
             PositionBox.ItemsSource = new Dictionary<OverlayPosition, string>
             {
                 [OverlayPosition.TopLeft] = "Top left",
@@ -64,6 +67,8 @@ namespace Workflow_Timer.Views
             _draft = settings.Copy();
             HotkeysList.ItemsSource = _draft.Hotkeys.OrderBy(binding => binding.Action).ToList();
             StartupCheck.IsChecked = settings.StartWithWindows;
+            TrayCheck.IsChecked = settings.MinimizeToTray;
+            ThemeBox.SelectedItem = settings.Theme;
             PositionBox.SelectedValue = settings.OverlayPosition;
             FocusCheck.IsChecked = settings.FocusGrabberEnabled;
             IntervalBox.Text = settings.FocusGrabberIntervalMinutes.ToString();
@@ -87,6 +92,8 @@ namespace Workflow_Timer.Views
             // Preserve saved drag coordinates when changing unrelated preferences.
             var candidate = _draft.Copy();
             candidate.StartWithWindows = StartupCheck.IsChecked == true;
+            candidate.MinimizeToTray = TrayCheck.IsChecked == true;
+            candidate.Theme = ThemeBox.SelectedItem is AppThemeMode theme ? theme : AppThemeMode.Light;
             candidate.OverlayPosition = position;
             candidate.FocusGrabberEnabled = FocusCheck.IsChecked == true;
             candidate.FocusGrabberIntervalMinutes = interval;
@@ -107,6 +114,25 @@ namespace Workflow_Timer.Views
             }
 
             DialogResult = true;
+        }
+
+        private void OpenDataFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try { DataManagementService.OpenFolder(); }
+            catch (Exception ex) { ErrorText.Text = "Could not open data folder: " + ex.Message; }
+        }
+
+        private void DeleteData_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show(this,
+                "Permanently delete all saved presets, tasks, history, records and settings?\n\n" +
+                "Unsaved edits will also be discarded. Workflow Timer will restart with factory defaults. " +
+                "Back up your data first if needed.",
+                "Delete all application data", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                MessageBoxResult.No) != MessageBoxResult.Yes)
+                return;
+            ResetDataRequested = true;
+            DialogResult = false;
         }
 
         private void HotkeyKey_PreviewKeyDown(object sender, KeyEventArgs e)

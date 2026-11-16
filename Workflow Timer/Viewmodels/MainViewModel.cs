@@ -281,6 +281,18 @@ namespace Workflow_Timer.Viewmodels
             RefreshScheduledActions();
 
             OnPropertyChanged(nameof(SelectedPreset));
+            RememberSelectedPreset();
+        }
+
+        private void RememberSelectedPreset()
+        {
+            if (_selectedPreset == null) return;
+            try { _presetService.SaveSelectedPresetId(_selectedPreset.Id); }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not remember the selected preset.\n\n" + ex.Message,
+                    "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         public TimerCommands TimerCommands { get; }
@@ -340,6 +352,8 @@ namespace Workflow_Timer.Viewmodels
                     + "Saving settings will replace the existing settings file.\n\n" + ex.Message;
             }
 
+            ThemeService.Apply(CurrentSettings.Theme);
+
             _workflowTimer = new WorkflowTimer(
                 new WorkTimer(),
                 new BreakTimer());
@@ -370,7 +384,10 @@ namespace Workflow_Timer.Viewmodels
 
             // Persist unfinished work if Windows/the user closes the app normally.
             if (Application.Current != null)
-                Application.Current.Exit += (_, _) => RecordWorkIfNeeded(false);
+                Application.Current.Exit += (_, _) =>
+                {
+                    if (!DataManagementService.ResetInProgress) RecordWorkIfNeeded(false);
+                };
 
             _schedulerService = new SchedulerService(
                 new LauncherService());
@@ -413,8 +430,14 @@ namespace Workflow_Timer.Viewmodels
 
             // Normalize existing presets to chronological action order once on load.
             bool reorderedOnLoad = false;
+            var ids = new HashSet<Guid>();
             foreach (var preset in savedPresets)
             {
+                if (preset.Id == Guid.Empty || !ids.Add(preset.Id))
+                {
+                    do { preset.Id = Guid.NewGuid(); } while (!ids.Add(preset.Id));
+                    reorderedOnLoad = true;
+                }
                 var original = preset.Session.Actions;
                 var sorted = SortHelper.ByOffset(original);
 
@@ -433,7 +456,8 @@ namespace Workflow_Timer.Viewmodels
             ScheduledActions =
                 new ObservableCollection<ScheduledActionViewModel>();
 
-            SelectedPreset = Presets[0];
+            var rememberedId = _presetService.LoadSelectedPresetId();
+            SelectedPreset = Presets.FirstOrDefault(p => p.Id == rememberedId) ?? Presets[0];
 
             TimerCommands = new TimerCommands(
                 StartTimer,
@@ -491,6 +515,7 @@ namespace Workflow_Timer.Viewmodels
                 throw;
             }
             CurrentSettings = settings.Copy();
+            ThemeService.Apply(CurrentSettings.Theme);
             SettingsLoadWarning = null;
             _overlayService.ConfigurePosition(CurrentSettings.OverlayPosition,
                 CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop);
@@ -1054,6 +1079,7 @@ namespace Workflow_Timer.Viewmodels
 
             var preset = new Preset
             {
+                Id = Guid.NewGuid(),
                 Name = "New Preset",
                 Session = new TimerSession
                 {

@@ -3,9 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:Workflow_Timer.Views.MainWindowControls"
         Title="Workflow Timer"
+        Background="{DynamicResource WorkflowWindowBrush}"
+        Foreground="{DynamicResource WorkflowTextBrush}"
         Icon="pack://application:,,,/Resources/Icons/Workflow_Timer.ico"
-        Width="1040" Height="740"
-        MinWidth="1040" MinHeight="550">
+        Width="1120" Height="800"
+        MinWidth="1120" MinHeight="600">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="ReminderVisibility"/>
@@ -55,14 +57,14 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition x:Name="LeftPanelColumn" Width="220" MinWidth="220" MaxWidth="480"/>
                 <ColumnDefinition x:Name="LeftSplitterColumn" Width="8"/>
-                <ColumnDefinition Width="*" MinWidth="440"/>
+                <ColumnDefinition Width="*" MinWidth="500"/>
                 <ColumnDefinition x:Name="RightSplitterColumn" Width="8"/>
                 <ColumnDefinition x:Name="RightPanelColumn" Width="320" MinWidth="320" MaxWidth="550"/>
             </Grid.ColumnDefinitions>
             <views:TodoControl x:Name="LeftPanel" Grid.Column="0" DataContext="{Binding Todo}"/>
             <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Center"
                           VerticalAlignment="Stretch" ResizeDirection="Columns"
-                          ResizeBehavior="PreviousAndNext" Background="#B8B8B8"
+                          ResizeBehavior="PreviousAndNext" Background="{DynamicResource WorkflowSplitterBrush}"
                           ShowsPreview="True"/>
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
@@ -75,7 +77,7 @@
             </ScrollViewer>
             <GridSplitter x:Name="RightSplitter" Grid.Column="3" Width="6" HorizontalAlignment="Center"
                           VerticalAlignment="Stretch" ResizeDirection="Columns"
-                          ResizeBehavior="PreviousAndNext" Background="#B8B8B8"
+                          ResizeBehavior="PreviousAndNext" Background="{DynamicResource WorkflowSplitterBrush}"
                           ShowsPreview="True"/>
             <ScrollViewer x:Name="RightPanel" Grid.Column="4"
                           VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"

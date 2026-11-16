@@ -9,6 +9,11 @@ namespace Workflow_Timer
     /// </summary>
     public partial class App : Application
     {
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+            Services.Storage.DataManagementService.FinishResetAndRestart();
+        }
     }
 
 }

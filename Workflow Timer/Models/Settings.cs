@@ -7,6 +7,8 @@ namespace Workflow_Timer.Models
     public class Settings
     {
         public bool StartWithWindows { get; set; } = false;
+        public bool MinimizeToTray { get; set; } = false;
+        public ThemeMode Theme { get; set; } = ThemeMode.Light;
         public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.TopLeft;
         // WPF device-independent coordinates; null means no saved drag position.
         public double? OverlayLeft { get; set; }
