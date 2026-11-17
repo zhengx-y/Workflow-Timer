@@ -73,7 +73,9 @@
             </ListBox>
             <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
                 <TextBlock Text="Clear older than" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBox Width="52" VerticalContentAlignment="Center" Margin="0,0,5,0"
+                <TextBox Width="76" MinWidth="76" Padding="6,3"
+                         TextWrapping="Wrap" MaxLines="1" AcceptsReturn="False"
+                         HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,5,0"
                          Text="{Binding RecentSessionAgeDays, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 <TextBlock Text="days" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <Button Content="Clear" Padding="10,4" Command="{Binding ClearOldRecentSessionsCommand}"/>
