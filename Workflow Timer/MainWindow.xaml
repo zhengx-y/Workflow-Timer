@@ -6,8 +6,8 @@
         Background="{DynamicResource WorkflowWindowBrush}"
         Foreground="{DynamicResource WorkflowTextBrush}"
         Icon="pack://application:,,,/Resources/Icons/Workflow_Timer.ico"
-        Width="1120" Height="800"
-        MinWidth="1120" MinHeight="600">
+        Width="1200" Height="800"
+        MinWidth="1200" MinHeight="600">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="ReminderVisibility"/>

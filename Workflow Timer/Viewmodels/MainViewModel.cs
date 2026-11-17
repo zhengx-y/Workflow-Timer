@@ -101,28 +101,8 @@ namespace Workflow_Timer.Viewmodels
             !HasUnsavedActionChanges && !_resolvingActionEdits &&
             SelectedPreset.Session.WorkDuration > TimeSpan.Zero &&
             SelectedPreset.Session.BreakDuration >= TimeSpan.Zero;
-        private ScheduledActionViewModel? _selectedScheduledAction;
-        private string _actionName = string.Empty;
-        private string _actionTarget = string.Empty;
-        private string _actionOffsetText = "00:00:00";
-        private ActionType _selectedActionType = ActionType.Website;
-        private bool _actionEnabled = true;
-        private bool _refreshingScheduledActions;
         private bool _resolvingActionEdits;
-
-        public bool HasUnsavedActionChanges
-        {
-            get
-            {
-                var action = SelectedScheduledAction?.Action;
-                return ActionName != (action?.Name ?? string.Empty) ||
-                    ActionTarget != (action?.Target ?? string.Empty) ||
-                    SelectedActionType != (action?.ActionType ?? ActionType.Website) ||
-                    ActionEnabled != (action?.Enabled ?? true) ||
-                    !TimeSpan.TryParse(ActionOffsetText, CultureInfo.InvariantCulture, out var offset) ||
-                    offset != (action?.OffsetFromStart ?? TimeSpan.Zero);
-            }
-        }
+        public bool HasUnsavedActionChanges => ScheduledActions.Any(row => row.HasPendingChanges);
 
         private void NotifyActionDraft()
         {
@@ -130,13 +110,8 @@ namespace Workflow_Timer.Viewmodels
             TimerCommands?.RefreshAvailability();
         }
 
-        public Array ActionTypes { get; } = Enum.GetValues<ActionType>();
-
         public ICommand AddScheduledActionCommand { get; }
-        public ICommand UpdateScheduledActionCommand { get; }
         public ICommand RemoveScheduledActionCommand { get; }
-        public ICommand ClearActionEditorCommand { get; }
-        public ICommand ToggleScheduledActionEnabledCommand { get; }
         public ICommand BrowseActionTargetCommand { get; }
 
         public ObservableCollection<HistoryDisplayRow> RecentHistory { get; } = new();
@@ -160,93 +135,6 @@ namespace Workflow_Timer.Viewmodels
         {
             get => _recentSessionAgeDays;
             set { _recentSessionAgeDays = value; OnPropertyChanged(); }
-        }
-
-        public bool CanBrowseActionTarget =>
-            SelectedActionType != ActionType.Website;
-
-        public ScheduledActionViewModel? SelectedScheduledAction
-        {
-            get => _selectedScheduledAction;
-            set
-            {
-                if (_refreshingScheduledActions || ReferenceEquals(_selectedScheduledAction, value))
-                    return;
-                var requested = value?.Action;
-                if (!ResolvePendingActionEdits())
-                {
-                    Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                        OnPropertyChanged(nameof(SelectedScheduledAction))));
-                    return;
-                }
-                SetActionSelection(requested == null ? null : FindScheduledActionViewModel(requested));
-                // Saving a draft can rebuild the list while WPF is setting this property.
-                Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
-                    OnPropertyChanged(nameof(SelectedScheduledAction))));
-            }
-        }
-
-        private void SetActionSelection(ScheduledActionViewModel? value)
-        {
-            _selectedScheduledAction = value;
-            ResetActionDraft();
-            OnPropertyChanged(nameof(SelectedScheduledAction));
-        }
-
-        private void ResetActionDraft()
-        {
-            var action = SelectedScheduledAction?.Action;
-            _actionName = action?.Name ?? string.Empty;
-            _selectedActionType = action?.ActionType ?? ActionType.Website;
-            _actionTarget = action?.Target ?? string.Empty;
-            _actionOffsetText = action?.OffsetFromStart.ToString("c", CultureInfo.InvariantCulture) ?? "00:00:00";
-            _actionEnabled = action?.Enabled ?? true;
-            OnPropertyChanged(nameof(ActionName));
-            OnPropertyChanged(nameof(SelectedActionType));
-            OnPropertyChanged(nameof(CanBrowseActionTarget));
-            OnPropertyChanged(nameof(ActionTarget));
-            OnPropertyChanged(nameof(ActionOffsetText));
-            OnPropertyChanged(nameof(ActionEnabled));
-            NotifyActionDraft();
-        }
-
-        public string ActionName
-        {
-            get => _actionName;
-            set { _actionName = value; OnPropertyChanged(); NotifyActionDraft(); }
-        }
-
-        public ActionType SelectedActionType
-        {
-            get => _selectedActionType;
-            set
-            {
-                if (_selectedActionType == value)
-                    return;
-
-                _selectedActionType = value;
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(CanBrowseActionTarget));
-                NotifyActionDraft();
-            }
-        }
-
-        public string ActionTarget
-        {
-            get => _actionTarget;
-            set { _actionTarget = value; OnPropertyChanged(); NotifyActionDraft(); }
-        }
-
-        public string ActionOffsetText
-        {
-            get => _actionOffsetText;
-            set { _actionOffsetText = value; OnPropertyChanged(); NotifyActionDraft(); }
-        }
-
-        public bool ActionEnabled
-        {
-            get => _actionEnabled;
-            set { _actionEnabled = value; OnPropertyChanged(); NotifyActionDraft(); }
         }
 
         public ObservableCollection<Preset> Presets { get; }
@@ -475,16 +363,9 @@ namespace Workflow_Timer.Viewmodels
                 CreatePreset,
                 DeletePreset);
 
-            ToggleScheduledActionEnabledCommand = new RelayCommand(ToggleScheduledActionEnabled);
             BrowseActionTargetCommand = new RelayCommand(BrowseActionTarget);
             AddScheduledActionCommand = new RelayCommand(AddScheduledAction);
-            UpdateScheduledActionCommand = new RelayCommand(UpdateScheduledAction);
             RemoveScheduledActionCommand = new RelayCommand(RemoveScheduledAction);
-            ClearActionEditorCommand = new RelayCommand(() =>
-            {
-                if (CanEditActions() && ResolvePendingActionEdits())
-                    SetActionSelection(null);
-            });
         }
 
         public void SaveSettings(Settings settings)
@@ -855,23 +736,23 @@ namespace Workflow_Timer.Viewmodels
                 SelectedPreset.Session.Actions);
         }
 
-        private void RefreshScheduledActions(ScheduledAction? selected = null)
+        private void RefreshScheduledActions()
         {
-            _refreshingScheduledActions = true;
-            try
+            ScheduledActions.Clear();
+            if (SelectedPreset != null)
+                foreach (var action in SelectedPreset.Session.Actions)
+                    ScheduledActions.Add(new ScheduledActionViewModel(action, AutoSaveAction));
+            OnPropertyChanged(nameof(ScheduledActions));
+            NotifyActionDraft();
+        }
+
+        public void SortActionRows()
+        {
+            var ordered = ScheduledActions.OrderBy(row => row.Action.OffsetFromStart).ToList();
+            for (int i = 0; i < ordered.Count; i++)
             {
-                ScheduledActions.Clear();
-                if (SelectedPreset != null)
-                {
-                    foreach (var action in SelectedPreset.Session.Actions)
-                        ScheduledActions.Add(new ScheduledActionViewModel(action));
-                }
-                SetActionSelection(selected == null ? null : FindScheduledActionViewModel(selected));
-                OnPropertyChanged(nameof(ScheduledActions));
-            }
-            finally
-            {
-                _refreshingScheduledActions = false;
+                int previous = ScheduledActions.IndexOf(ordered[i]);
+                if (previous != i) ScheduledActions.Move(previous, i);
             }
         }
 
@@ -1053,14 +934,12 @@ namespace Workflow_Timer.Viewmodels
             try
             {
                 var result = MessageBox.Show(Application.Current.MainWindow,
-                    "Save changes to the scheduled action?\n\nYes: Save\nNo: Discard\nCancel: Keep editing",
-                    "Unsaved scheduled action", MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question, MessageBoxResult.Cancel);
+                    "Some scheduled action edits could not be saved. Discard those edits?",
+                    "Incomplete scheduled actions", MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning, MessageBoxResult.No);
                 if (result == MessageBoxResult.Yes)
-                    return TrySaveActionDraft(SelectedScheduledAction == null);
-                if (result == MessageBoxResult.No)
                 {
-                    ResetActionDraft();
+                    RefreshScheduledActions();
                     return true;
                 }
                 return false;
@@ -1132,45 +1011,28 @@ namespace Workflow_Timer.Viewmodels
             return CanEditSettings && !_resolvingActionEdits && !_resolvingPresetEdits;
         }
 
-        private void BrowseActionTarget()
+        private void BrowseActionTarget(object? value)
         {
-            if (!CanEditActions() || !CanBrowseActionTarget)
+            if (!CanEditActions() || value is not ScheduledActionViewModel row || !ScheduledActions.Contains(row))
                 return;
 
-            if (SelectedActionType == ActionType.Folder)
+            var owner = Application.Current.MainWindow;
+            var choice = new Workflow_Timer.Views.BrowseTargetView { Owner = owner };
+            if (choice.ShowDialog() != true || !CanEditActions() || !ScheduledActions.Contains(row))
+                return;
+
+            if (choice.SelectedTarget == Workflow_Timer.Views.BrowseTargetKind.File)
             {
-                var folderDialog = new OpenFolderDialog
-                {
-                    Title = "Select a folder",
-                    Multiselect = false
-                };
-
-                if (Directory.Exists(ActionTarget))
-                    folderDialog.InitialDirectory = ActionTarget;
-
-                if (folderDialog.ShowDialog() == true)
-                    ActionTarget = folderDialog.FolderName;
-
-                return;
+                var dialog = new OpenFileDialog { Title = "Select a file", Filter = "All files (*.*)|*.*", CheckFileExists = true };
+                if (dialog.ShowDialog(owner) == true && CanEditActions() && ScheduledActions.Contains(row))
+                    row.Target = dialog.FileName;
             }
-
-            var fileDialog = new OpenFileDialog
+            else if (choice.SelectedTarget == Workflow_Timer.Views.BrowseTargetKind.Folder)
             {
-                Title = SelectedActionType == ActionType.Executable
-                    ? "Select an executable"
-                    : "Select a file",
-                Filter = SelectedActionType == ActionType.Executable
-                    ? "Executable files (*.exe)|*.exe|All files (*.*)|*.*"
-                    : "All files (*.*)|*.*",
-                Multiselect = false,
-                CheckFileExists = true
-            };
-
-            if (File.Exists(ActionTarget))
-                fileDialog.InitialDirectory = Path.GetDirectoryName(ActionTarget);
-
-            if (fileDialog.ShowDialog() == true)
-                ActionTarget = fileDialog.FileName;
+                var dialog = new OpenFolderDialog { Title = "Select a folder" };
+                if (dialog.ShowDialog(owner) == true && CanEditActions() && ScheduledActions.Contains(row))
+                    row.Target = dialog.FolderName;
+            }
         }
 
         private static bool TryNormalizeWebsite(string input, out string normalized)
@@ -1210,176 +1072,120 @@ namespace Workflow_Timer.Viewmodels
             return true;
         }
 
-        private bool TryReadActionFields(out TimeSpan offset, out string normalizedTarget)
+        private static bool TryInferTarget(string input, out ActionType type, out string target)
         {
-            offset = TimeSpan.Zero;
-            normalizedTarget = string.Empty;
-
-            if (string.IsNullOrWhiteSpace(ActionName) ||
-                string.IsNullOrWhiteSpace(ActionTarget))
+            target = input.Trim();
+            type = ActionType.File;
+            if (Directory.Exists(target))
             {
-                MessageBox.Show("Enter both a name and a target.", "Invalid Action");
+                type = ActionType.Folder;
+                target = Path.GetFullPath(target);
+                return true;
+            }
+            if (File.Exists(target))
+            {
+                type = Path.GetExtension(target).Equals(".exe", StringComparison.OrdinalIgnoreCase)
+                    ? ActionType.Executable : ActionType.File;
+                target = Path.GetFullPath(target);
+                return true;
+            }
+            if (target.Contains('\\') || target.StartsWith("/") ||
+                (target.Length >= 2 && target[1] == ':'))
                 return false;
-            }
-
-            if (!TimeSpan.TryParse(ActionOffsetText, CultureInfo.InvariantCulture, out offset) ||
-                offset < TimeSpan.Zero ||
-                offset > SelectedPreset!.Session.WorkDuration)
-            {
-                MessageBox.Show(
-                    "Enter a valid, non-negative offset within the work duration (for example 00:00:05).",
-                    "Invalid Offset");
+            bool explicitUrl = target.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || target.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                || target.StartsWith("www.", StringComparison.OrdinalIgnoreCase);
+            if (!TryNormalizeWebsite(target, out var normalized)) return false;
+            var host = new Uri(normalized).Host;
+            var suffix = host.Split('.').Last();
+            string[] common = { "com", "org", "net", "edu", "gov", "io", "dev", "app", "info", "biz", "me", "co", "at", "de", "uk", "eu", "jp", "fr", "ch", "tv", "ai", "gg", "xyz" };
+            if (!explicitUrl && !common.Contains(suffix, StringComparer.OrdinalIgnoreCase) &&
+                !host.Equals("localhost", StringComparison.OrdinalIgnoreCase) &&
+                !global::System.Net.IPAddress.TryParse(host, out _))
                 return false;
-            }
-
-            string target = ActionTarget.Trim();
-            bool validTarget;
-
-            if (SelectedActionType == ActionType.Website)
-            {
-                validTarget = TryNormalizeWebsite(target, out normalizedTarget);
-            }
-            else
-            {
-                normalizedTarget = target;
-                validTarget = SelectedActionType switch
-                {
-                    ActionType.Executable or ActionType.File => File.Exists(target),
-                    ActionType.Folder => Directory.Exists(target),
-                    _ => false
-                };
-            }
-
-            if (!validTarget)
-            {
-                MessageBox.Show(
-                    "Enter a valid website address or select an existing file/folder path.",
-                    "Invalid Target");
-                return false;
-            }
-
+            type = ActionType.Website;
+            target = normalized;
             return true;
         }
 
         private void AddScheduledAction()
         {
-            if (CanEditActions())
-                TrySaveActionDraft(true);
-        }
-
-        private void ToggleScheduledActionEnabled(object? value)
-        {
-            if (value is not ScheduledActionViewModel item)
-                return;
-
-            if (!CanEditActions())
-                return;
-
-            if (SelectedPreset == null ||
-                !SelectedPreset.Session.Actions.Contains(item.Action))
-                return;
-
-            var action = item.Action;
-            bool oldEnabled = action.Enabled;
-            bool syncEditor = ReferenceEquals(SelectedScheduledAction?.Action, action) &&
-                ActionEnabled == oldEnabled;
-            action.Enabled = !action.Enabled;
-
-            if (!TryPersistActionChanges(() => action.Enabled = oldEnabled))
+            if (!CanEditActions()) return;
+            var row = new ScheduledActionViewModel(new ScheduledAction
             {
-                item.RefreshEnabled();
-                return;
-            }
-            item.RefreshEnabled();
-            if (syncEditor)
-                ActionEnabled = action.Enabled;
+                Name = "New Action", Target = string.Empty, Enabled = true,
+                OffsetFromStart = TimeSpan.Zero
+            }, AutoSaveAction);
+            row.SetPending("Enter an existing path or website URL.");
+            ScheduledActions.Add(row);
             NotifyActionDraft();
         }
 
-        private void UpdateScheduledAction()
+        private void AutoSaveAction(ScheduledActionViewModel row)
         {
-            if (CanEditActions() && SelectedScheduledAction != null)
-                TrySaveActionDraft(false);
-        }
+            if (!CanEditActions() || !ScheduledActions.Contains(row)) return;
+            var session = SelectedPreset!.Session;
+            string? error = null;
+            TimeSpan offset = TimeSpan.Zero;
+            ActionType type = ActionType.File;
+            string target = string.Empty;
+            if (string.IsNullOrWhiteSpace(row.Name)) error = "Enter a name.";
+            else if (!TimeSpan.TryParseExact(row.OffsetText, "c", CultureInfo.InvariantCulture, out offset)
+                || offset < TimeSpan.Zero || offset > session.WorkDuration)
+                error = "Enter an offset within the work duration (HH:MM:SS).";
+            else if (!TryInferTarget(row.Target, out type, out target)) error = "Enter an existing path or valid website URL.";
+            if (error != null)
+            {
+                row.SetPending(error);
+                NotifyActionDraft();
+                return;
+            }
 
-        private bool TrySaveActionDraft(bool add)
-        {
-            if (SelectedPreset == null || (!add && SelectedScheduledAction == null) ||
-                !TryReadActionFields(out var offset, out var target))
-                return false;
-
-            var session = SelectedPreset.Session;
+            var action = row.Action;
+            var old = (action.Name, action.ActionType, action.Target, action.OffsetFromStart, action.Enabled);
             var originalOrder = session.Actions.ToList();
-            var action = add ? new ScheduledAction() : SelectedScheduledAction!.Action;
-            var oldName = action.Name;
-            var oldType = action.ActionType;
-            var oldTarget = action.Target;
-            var oldOffset = action.OffsetFromStart;
-            var oldEnabled = action.Enabled;
-            action.Name = ActionName.Trim();
-            action.ActionType = SelectedActionType;
+            action.Name = row.Name.Trim();
+            action.ActionType = type;
             action.Target = target;
             action.OffsetFromStart = offset;
-            action.Enabled = ActionEnabled;
-
-            if (add)
-                session.Actions.Add(action);
+            action.Enabled = row.Enabled;
+            if (!session.Actions.Contains(action)) session.Actions.Add(action);
             SortSelectedPresetActions();
-            if (!TryPersistActionChanges(() =>
-            {
-                session.Actions = originalOrder;
-                action.Name = oldName;
-                action.ActionType = oldType;
-                action.Target = oldTarget;
-                action.OffsetFromStart = oldOffset;
-                action.Enabled = oldEnabled;
-            }))
-                return false;
-
-            RefreshScheduledActions(action);
-            return true;
-        }
-
-        private bool TryPersistActionChanges(Action rollback)
-        {
             try
             {
                 PersistPresets();
-                return true;
+                row.SetPending(null);
             }
             catch (Exception ex)
             {
-                rollback();
-                MessageBox.Show("Could not save scheduled actions: " + ex.Message,
-                    "Save failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                return false;
+                session.Actions = originalOrder;
+                (action.Name, action.ActionType, action.Target, action.OffsetFromStart, action.Enabled) = old;
+                row.SetPending("Save failed: " + ex.Message);
             }
+            NotifyActionDraft();
         }
 
-        private void RemoveScheduledAction()
+        private void RemoveScheduledAction(object? value)
         {
-            if (!CanEditActions() || SelectedScheduledAction == null)
+            if (!CanEditActions() || value is not ScheduledActionViewModel row || !ScheduledActions.Contains(row))
                 return;
-
-            var action = SelectedScheduledAction.Action;
-            var confirmation = MessageBox.Show(
-                $"Remove scheduled action \"{action.Name}\"?" +
-                (HasUnsavedActionChanges ? "\n\nUnsaved edits to this action will also be discarded." : ""),
-                "Confirm Action Removal",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question,
-                MessageBoxResult.No);
-
-            if (confirmation != MessageBoxResult.Yes)
+            if (MessageBox.Show($"Remove scheduled action \"{row.Name}\"?", "Confirm Action Removal",
+                MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes)
                 return;
-
             var session = SelectedPreset!.Session;
             var originalOrder = session.Actions.ToList();
-            session.Actions.Remove(action);
-            SortSelectedPresetActions();
-            if (!TryPersistActionChanges(() => session.Actions = originalOrder))
-                return;
-            RefreshScheduledActions();
+            if (session.Actions.Remove(row.Action))
+            {
+                try { PersistPresets(); }
+                catch (Exception ex)
+                {
+                    session.Actions = originalOrder;
+                    MessageBox.Show("Could not remove action: " + ex.Message, "Save failed");
+                    return;
+                }
+            }
+            ScheduledActions.Remove(row);
+            NotifyActionDraft();
         }
 
         private static string FormatWork(TimeSpan duration)
