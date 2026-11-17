@@ -6,8 +6,8 @@
         Background="{DynamicResource WorkflowWindowBrush}"
         Foreground="{DynamicResource WorkflowTextBrush}"
         Icon="pack://application:,,,/Resources/Icons/Workflow_Timer.ico"
-        Width="1200" Height="800"
-        MinWidth="1200" MinHeight="600">
+        Width="1200" Height="900"
+        MinWidth="1200" MinHeight="700">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="ReminderVisibility"/>
@@ -27,19 +27,19 @@
                 Visibility="{Binding IsFocusReminderVisible, Converter={StaticResource ReminderVisibility}}">
             <Border.Style>
                 <Style TargetType="Border">
-                    <Setter Property="Background" Value="#FFF4D6"/>
-                    <Setter Property="BorderBrush" Value="#C99C35"/>
+                    <Setter Property="Background" Value="{DynamicResource WorkflowFocusBannerBrush}"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource WorkflowFocusBannerBorderBrush}"/>
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding IsFocusReminderBlinkOn}" Value="True">
-                            <Setter Property="Background" Value="#FFD36B"/>
-                            <Setter Property="BorderBrush" Value="#A66600"/>
+                            <Setter Property="Background" Value="{DynamicResource WorkflowFocusBannerBlinkBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource WorkflowFocusBannerBlinkBorderBrush}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
             <StackPanel>
-                <TextBlock Text="Break is over!" FontSize="19" FontWeight="SemiBold" Foreground="#322710"/>
-                <TextBlock Text="Time to get back to work." Margin="0,3,0,8" Foreground="#322710"/>
+                <TextBlock Text="Break is over!" FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource WorkflowFocusBannerTextBrush}"/>
+                <TextBlock Text="Time to get back to work." Margin="0,3,0,8" Foreground="{DynamicResource WorkflowFocusBannerTextBrush}"/>
                 <WrapPanel>
                     <Button Content="Start work" Command="{Binding TimerCommands.StartCommand}"
                             Padding="14,6" Margin="0,0,8,0"/>
@@ -49,7 +49,7 @@
                             IsEnabled="{Binding IsFocusReminderAttentionActive}" Padding="14,6" Margin="0,0,8,0"/>
                     <Button Content="Cancel Reminder" Command="{Binding CancelReminderCommand}" Padding="14,6"/>
                 </WrapPanel>
-                <TextBlock Text="{Binding FocusReminderIntervalText}" Margin="0,6,0,0" Foreground="#57491F"/>
+                <TextBlock Text="{Binding FocusReminderIntervalText}" Margin="0,6,0,0" Foreground="{DynamicResource WorkflowFocusBannerMutedBrush}"/>
             </StackPanel>
         </Border>
         <!-- Three independently scrolling areas with two resizable side columns. -->
@@ -66,15 +66,31 @@
                           VerticalAlignment="Stretch" ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" Background="{DynamicResource WorkflowSplitterBrush}"
                           ShowsPreview="True"/>
-            <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto"
-                      HorizontalScrollBarVisibility="Disabled"
-                      CanContentScroll="False">
-                <StackPanel Margin="0,0,0,10">
-                    <views:PresetControl IsEnabled="{Binding CanEditSettings}"/>
-                    <views:TimerControl/>
-                    <views:ScheduledActionControl/>
-                </StackPanel>
-            </ScrollViewer>
+            <Grid Grid.Column="2" Margin="0,0,0,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="180"/>
+                </Grid.RowDefinitions>
+                <!-- Reserve space for the scheduler even when the top controls need scrolling. -->
+                <Border x:Name="CenterHeaderSpace" Grid.Row="0" IsHitTestVisible="False"/>
+                <Grid Grid.RowSpan="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <ScrollViewer Grid.Row="0"
+                                  MaxHeight="{Binding ActualHeight, ElementName=CenterHeaderSpace}"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  CanContentScroll="False">
+                        <StackPanel>
+                            <views:PresetControl IsEnabled="{Binding CanEditSettings}"/>
+                            <views:TimerControl/>
+                        </StackPanel>
+                    </ScrollViewer>
+                    <views:ScheduledActionControl Grid.Row="1"/>
+                </Grid>
+            </Grid>
             <GridSplitter x:Name="RightSplitter" Grid.Column="3" Width="6" HorizontalAlignment="Center"
                           VerticalAlignment="Stretch" ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" Background="{DynamicResource WorkflowSplitterBrush}"

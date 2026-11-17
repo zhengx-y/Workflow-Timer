@@ -11,4 +11,10 @@
     <SolidColorBrush x:Key="WorkflowErrorBrush" Color="#FFB22222"/>
     <SolidColorBrush x:Key="WorkflowOverlayBrush" Color="#FFEDEDED"/>
     <SolidColorBrush x:Key="WorkflowOverlayBorderBrush" Color="#FF202020"/>
+    <SolidColorBrush x:Key="WorkflowFocusBannerBrush" Color="#FFFFF4D6"/>
+    <SolidColorBrush x:Key="WorkflowFocusBannerBorderBrush" Color="#FFC99C35"/>
+    <SolidColorBrush x:Key="WorkflowFocusBannerBlinkBrush" Color="#FFFFD36B"/>
+    <SolidColorBrush x:Key="WorkflowFocusBannerBlinkBorderBrush" Color="#FFA66600"/>
+    <SolidColorBrush x:Key="WorkflowFocusBannerTextBrush" Color="#FF322710"/>
+    <SolidColorBrush x:Key="WorkflowFocusBannerMutedBrush" Color="#FF57491F"/>
 </ResourceDictionary>
