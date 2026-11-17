@@ -1,6 +1,7 @@
 <UserControl x:Class="Workflow_Timer.Views.MainWindowControls.ScheduledActionControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Workflow_Timer.Views.Controls"
              FontSize="12">
     <Border Style="{StaticResource WorkflowPanelFrame}" BorderThickness="1" CornerRadius="6"
             Padding="8" Margin="0,6,0,0">
@@ -32,7 +33,7 @@
                             <ColumnDefinition Width="45"/>
                             <ColumnDefinition Width="53"/>
                             <ColumnDefinition Width="132"/>
-                            <ColumnDefinition Width="110"/>
+                            <ColumnDefinition Width="142"/>
                             <ColumnDefinition Width="76"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
@@ -64,7 +65,7 @@
                                             <ColumnDefinition Width="45"/>
                                             <ColumnDefinition Width="53"/>
                                             <ColumnDefinition Width="132"/>
-                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="142"/>
                                             <ColumnDefinition Width="76"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
@@ -77,8 +78,11 @@
                                                 CommandParameter="{Binding}"/>
                                         <TextBox Grid.Column="2" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="2,0" Padding="4,1" MinHeight="24" ToolTip="{Binding Name}"/>
-                                        <TextBox Grid.Column="3" Text="{Binding OffsetText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Margin="2,0" Padding="4,1" MinHeight="24" ToolTip="Offset (HH:MM:SS)"
+                                        <controls:TimeSpinnerControl Grid.Column="3"
+                                                 ShowArrows="False"
+                                                 UseConstantFormat="True"
+                                                 DurationText="{Binding OffsetText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="2,0" VerticalAlignment="Center"
                                                  LostKeyboardFocus="ActionOffsetLostFocus"/>
                                         <Button Grid.Column="4" Content="Browse…" Padding="4,1" MinWidth="0" MinHeight="24" Margin="2,0"
                                                 Command="{Binding DataContext.BrowseActionTargetCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"

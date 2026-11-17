@@ -1,0 +1,123 @@
+<UserControl x:Class="Workflow_Timer.Views.Controls.TimeSpinnerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="SpinnerRoot" Focusable="False" HorizontalAlignment="Left">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="ArrowVisibility"/>
+        <Style x:Key="SpinnerField" TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource WorkflowPanelBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource WorkflowTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource WorkflowBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="1,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="24"/>
+            <Setter Property="FontSize" Value="12"/>
+            <EventSetter Event="PreviewMouseLeftButtonDown" Handler="Field_PreviewMouseLeftButtonDown"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="FieldBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                          VerticalAlignment="Center" HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="FieldBorder" Property="BorderBrush" Value="{DynamicResource WorkflowTextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="FieldBorder" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SpinnerArrow" TargetType="RepeatButton">
+            <Setter Property="Visibility" Value="{Binding ShowArrows, ElementName=SpinnerRoot, Converter={StaticResource ArrowVisibility}}"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Background" Value="{DynamicResource WorkflowPanelBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource WorkflowTextBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource WorkflowCardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border x:Name="ArrowBorder" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ArrowBorder" Property="BorderBrush" Value="{DynamicResource WorkflowTextBrush}"/>
+                                <Setter TargetName="ArrowBorder" Property="Background" Value="{DynamicResource WorkflowWindowBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ArrowBorder" Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="ArrowBorder" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    <Grid KeyboardNavigation.TabNavigation="Continue">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="46"/>
+            <ColumnDefinition Width="9"/>
+            <ColumnDefinition Width="31"/>
+            <ColumnDefinition Width="9"/>
+            <ColumnDefinition Width="31"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <RepeatButton Grid.Column="0" Style="{StaticResource SpinnerArrow}" Tag="0:1" Click="Arrow_Click"
+                      Content="⌃" ToolTip="Increase hours"/>
+        <RepeatButton Grid.Column="2" Style="{StaticResource SpinnerArrow}" Tag="1:1" Click="Arrow_Click"
+                      Content="⌃" ToolTip="Increase minutes"/>
+        <RepeatButton Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:1" Click="Arrow_Click"
+                      Content="⌃" ToolTip="Increase seconds"/>
+
+        <TextBox x:Name="HoursBox" Grid.Row="1" Grid.Column="0" Style="{StaticResource SpinnerField}" Tag="0"
+                 AutomationProperties.Name="Hours" ToolTip="Hours — scroll or type" MaxLength="9"
+                 TextChanged="Field_TextChanged" PreviewTextInput="Field_PreviewTextInput"
+                 PreviewMouseWheel="Field_PreviewMouseWheel" PreviewKeyDown="Field_PreviewKeyDown"
+                 GotKeyboardFocus="Field_GotFocus" LostKeyboardFocus="Field_LostFocus"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Text=":" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBox x:Name="MinutesBox" Grid.Row="1" Grid.Column="2" Style="{StaticResource SpinnerField}" Tag="1"
+                 AutomationProperties.Name="Minutes" ToolTip="Minutes — scroll or type" MaxLength="2"
+                 TextChanged="Field_TextChanged" PreviewTextInput="Field_PreviewTextInput"
+                 PreviewMouseWheel="Field_PreviewMouseWheel" PreviewKeyDown="Field_PreviewKeyDown"
+                 GotKeyboardFocus="Field_GotFocus" LostKeyboardFocus="Field_LostFocus"/>
+        <TextBlock Grid.Row="1" Grid.Column="3" Text=":" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <TextBox x:Name="SecondsBox" Grid.Row="1" Grid.Column="4" Style="{StaticResource SpinnerField}" Tag="2"
+                 AutomationProperties.Name="Seconds" ToolTip="Seconds — scroll or type" MaxLength="2"
+                 TextChanged="Field_TextChanged" PreviewTextInput="Field_PreviewTextInput"
+                 PreviewMouseWheel="Field_PreviewMouseWheel" PreviewKeyDown="Field_PreviewKeyDown"
+                 GotKeyboardFocus="Field_GotFocus" LostKeyboardFocus="Field_LostFocus"/>
+
+        <RepeatButton Grid.Row="2" Grid.Column="0" Style="{StaticResource SpinnerArrow}" Tag="0:-1" Click="Arrow_Click"
+                      Content="⌄" ToolTip="Decrease hours"/>
+        <RepeatButton Grid.Row="2" Grid.Column="2" Style="{StaticResource SpinnerArrow}" Tag="1:-1" Click="Arrow_Click"
+                      Content="⌄" ToolTip="Decrease minutes"/>
+        <RepeatButton Grid.Row="2" Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:-1" Click="Arrow_Click"
+                      Content="⌄" ToolTip="Decrease seconds"/>
+    </Grid>
+</UserControl>

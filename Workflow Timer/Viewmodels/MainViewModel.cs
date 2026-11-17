@@ -72,35 +72,41 @@ namespace Workflow_Timer.Viewmodels
         private string _presetWorkDraft = string.Empty;
         private string _presetBreakDraft = string.Empty;
         private bool _resolvingPresetEdits;
+        private readonly global::System.Windows.Threading.DispatcherTimer _presetSaveTimer = new()
+        {
+            Interval = TimeSpan.FromMilliseconds(350)
+        };
+        private string? _presetSaveError;
 
         public string PresetNameDraft
         {
             get => _presetNameDraft;
-            set { _presetNameDraft = value; NotifyPresetDraft(); }
+            set { if (_presetNameDraft == value) return; _presetNameDraft = value; QueuePresetSave(); }
         }
 
         public string PresetWorkDraft
         {
             get => _presetWorkDraft;
-            set { _presetWorkDraft = value; NotifyPresetDraft(); }
+            set { if (_presetWorkDraft == value) return; _presetWorkDraft = value; QueuePresetSave(); }
         }
 
         public string PresetBreakDraft
         {
             get => _presetBreakDraft;
-            set { _presetBreakDraft = value; NotifyPresetDraft(); }
+            set { if (_presetBreakDraft == value) return; _presetBreakDraft = value; QueuePresetSave(); }
         }
 
         public bool HasUnsavedPresetChanges => SelectedPreset is Preset preset &&
-            (PresetNameDraft != preset.Name ||
+            (PresetNameDraft.Trim() != preset.Name ||
              !TryParsePresetDuration(PresetWorkDraft, out var work) || work != preset.Session.WorkDuration ||
              !TryParsePresetDuration(PresetBreakDraft, out var pause) || pause != preset.Session.BreakDuration);
 
+        public string? PresetEditError => GetPresetValidationError() ?? _presetSaveError;
+        public bool HasPresetEditError => PresetEditError != null;
+
         private bool CanRunSelectedPreset => SelectedPreset != null &&
-            !HasUnsavedPresetChanges && !_resolvingPresetEdits &&
-            !HasUnsavedActionChanges && !_resolvingActionEdits &&
-            SelectedPreset.Session.WorkDuration > TimeSpan.Zero &&
-            SelectedPreset.Session.BreakDuration >= TimeSpan.Zero;
+            !HasPresetEditError && !_resolvingPresetEdits &&
+            !HasUnsavedActionChanges && !_resolvingActionEdits;
         private bool _resolvingActionEdits;
         public bool HasUnsavedActionChanges => ScheduledActions.Any(row => row.HasPendingChanges);
 
@@ -226,6 +232,12 @@ namespace Workflow_Timer.Viewmodels
 
         public MainViewModel()
         {
+            _presetSaveTimer.Tick += (_, _) =>
+            {
+                _presetSaveTimer.Stop();
+                if (CanEditSettings && !_resolvingPresetEdits && HasUnsavedPresetChanges)
+                    TrySavePresetDraft();
+            };
             Todo = new TodoViewModel(new TodoService(new AppDataPathService()));
             NextMotivationQuoteCommand = new RelayCommand(NextMotivationQuote);
             NextMotivationQuote();
@@ -359,7 +371,6 @@ namespace Workflow_Timer.Viewmodels
 
             PresetCommands = new PresetCommands(
                 LoadPreset,
-                SavePreset,
                 CreatePreset,
                 DeletePreset);
 
@@ -495,6 +506,8 @@ namespace Workflow_Timer.Viewmodels
             if (!CanStartTimer || !CanRunSelectedPreset)
                 return;
 
+            if (!FlushPresetSave()) return;
+
             if (SelectedPreset == null)
                 return;
 
@@ -562,6 +575,8 @@ namespace Workflow_Timer.Viewmodels
         {
             if (!CanRepeatTimer || !CanRunSelectedPreset)
                 return;
+
+            if (!FlushPresetSave()) return;
 
             // After completion the selected preset may have changed.
             if (State == SessionState.Completed)
@@ -787,14 +802,6 @@ namespace Workflow_Timer.Viewmodels
             RefreshScheduledActions();
         }
 
-        private void SavePreset()
-        {
-            if (!CanEditSettings)
-                return;
-
-            TrySavePresetDraft();
-        }
-
         private void PersistPresets() => _presetService.SavePresets(Presets.ToList());
 
         private static string FormatPresetDuration(TimeSpan duration) =>
@@ -828,11 +835,30 @@ namespace Workflow_Timer.Viewmodels
         private void NotifyPresetDraft()
         {
             OnPropertyChanged(nameof(HasUnsavedPresetChanges));
+            OnPropertyChanged(nameof(PresetEditError));
+            OnPropertyChanged(nameof(HasPresetEditError));
             TimerCommands?.RefreshAvailability();
+        }
+
+        private void QueuePresetSave()
+        {
+            _presetSaveTimer.Stop();
+            _presetSaveError = null;
+            if (CanEditSettings && !_resolvingPresetEdits && HasUnsavedPresetChanges && !HasPresetEditError)
+                _presetSaveTimer.Start();
+            NotifyPresetDraft();
+        }
+
+        private bool FlushPresetSave()
+        {
+            _presetSaveTimer.Stop();
+            return !HasUnsavedPresetChanges || (CanEditSettings && TrySavePresetDraft());
         }
 
         private void ResetPresetDraft()
         {
+            _presetSaveTimer.Stop();
+            _presetSaveError = null;
             if (SelectedPreset is not Preset preset)
                 return;
             _presetNameDraft = preset.Name;
@@ -844,25 +870,26 @@ namespace Workflow_Timer.Viewmodels
             NotifyPresetDraft();
         }
 
-        private bool TrySavePresetDraft()
+        private string? GetPresetValidationError()
         {
             if (SelectedPreset is not Preset preset)
-                return false;
+                return null;
 
             if (string.IsNullOrWhiteSpace(PresetNameDraft) ||
                 !TryParsePresetDuration(PresetWorkDraft, out var work) || work <= TimeSpan.Zero ||
-                !TryParsePresetDuration(PresetBreakDraft, out var pause))
-            {
-                MessageBox.Show("Enter a preset name, a positive work duration and a non-negative break duration (HH:MM:SS).",
-                    "Invalid preset", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return false;
-            }
+                !TryParsePresetDuration(PresetBreakDraft, out _))
+                return "Enter a preset name, a positive work duration and a valid break duration.";
             if (preset.Session.Actions.Any(action => action.OffsetFromStart > work))
-            {
-                MessageBox.Show("A scheduled action has an offset beyond the new work duration. Adjust or remove that action first.",
-                    "Invalid preset", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return "A scheduled action exceeds the work duration. Adjust or remove it first.";
+            return null;
+        }
+
+        private bool TrySavePresetDraft()
+        {
+            if (SelectedPreset is not Preset preset || GetPresetValidationError() != null ||
+                !TryParsePresetDuration(PresetWorkDraft, out var work) ||
+                !TryParsePresetDuration(PresetBreakDraft, out var pause))
                 return false;
-            }
 
             var oldName = preset.Name;
             var oldWork = preset.Session.WorkDuration;
@@ -879,12 +906,12 @@ namespace Workflow_Timer.Viewmodels
                 preset.Name = oldName;
                 preset.Session.WorkDuration = oldWork;
                 preset.Session.BreakDuration = oldBreak;
+                _presetSaveError = "Could not save preset: " + ex.Message;
                 NotifyPresetDraft();
-                MessageBox.Show("Could not save the preset: " + ex.Message,
-                    "Save failed", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
-            ResetPresetDraft();
+            _presetSaveError = null;
+            NotifyPresetDraft();
             return true;
         }
 
@@ -893,7 +920,7 @@ namespace Workflow_Timer.Viewmodels
         {
             if (_resolvingPresetEdits)
                 return false;
-            if (!HasUnsavedPresetChanges)
+            if (FlushPresetSave())
                 return true;
 
             _resolvingPresetEdits = true;
@@ -901,12 +928,10 @@ namespace Workflow_Timer.Viewmodels
             try
             {
                 var result = MessageBox.Show(Application.Current.MainWindow,
-                    "Save changes to the current preset?\n\nYes: Save\nNo: Discard\nCancel: Keep editing",
-                    "Unsaved preset changes", MessageBoxButton.YesNoCancel,
-                    MessageBoxImage.Question, MessageBoxResult.Cancel);
+                    (PresetEditError ?? "Preset changes could not be saved.") + "\n\nDiscard these edits?",
+                    "Incomplete preset", MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning, MessageBoxResult.No);
                 if (result == MessageBoxResult.Yes)
-                    return TrySavePresetDraft();
-                if (result == MessageBoxResult.No)
                 {
                     ResetPresetDraft();
                     return true;
@@ -1124,6 +1149,7 @@ namespace Workflow_Timer.Viewmodels
         private void AutoSaveAction(ScheduledActionViewModel row)
         {
             if (!CanEditActions() || !ScheduledActions.Contains(row)) return;
+            if (HasUnsavedPresetChanges && !HasPresetEditError) FlushPresetSave();
             var session = SelectedPreset!.Session;
             string? error = null;
             TimeSpan offset = TimeSpan.Zero;
@@ -1163,6 +1189,7 @@ namespace Workflow_Timer.Viewmodels
                 row.SetPending("Save failed: " + ex.Message);
             }
             NotifyActionDraft();
+            if (HasUnsavedPresetChanges) QueuePresetSave();
         }
 
         private void RemoveScheduledAction(object? value)
@@ -1186,6 +1213,7 @@ namespace Workflow_Timer.Viewmodels
             }
             ScheduledActions.Remove(row);
             NotifyActionDraft();
+            if (HasUnsavedPresetChanges) QueuePresetSave();
         }
 
         private static string FormatWork(TimeSpan duration)

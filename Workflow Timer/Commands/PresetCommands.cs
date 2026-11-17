@@ -8,7 +8,6 @@ namespace Workflow_Timer.Commands
     {
         public ICommand LoadPresetCommand { get; }
 
-        public ICommand SavePresetCommand { get; }
 
         public ICommand CreatePresetCommand { get; }
 
@@ -18,15 +17,11 @@ namespace Workflow_Timer.Commands
 
         public PresetCommands(
             Action load,
-            Action save,
             Action create,
             Action delete)
         {
             LoadPresetCommand =
                 new RelayCommand(load);
-
-            SavePresetCommand =
-                new RelayCommand(save);
 
             CreatePresetCommand =
                 new RelayCommand(create);
