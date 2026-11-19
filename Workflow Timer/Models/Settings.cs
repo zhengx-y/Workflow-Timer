@@ -7,13 +7,20 @@ namespace Workflow_Timer.Models
     public class Settings
     {
         public bool StartWithWindows { get; set; } = false;
+        public bool NeverShowTutorial { get; set; } = false;
+        public bool FirstLaunchSetupCompleted { get; set; } = false;
         public bool MinimizeToTray { get; set; } = false;
+        // Only normal/maximized are persisted; minimized is never a startup state.
+        public bool MainWindowMaximized { get; set; } = false;
         public ThemeMode Theme { get; set; } = ThemeMode.Light;
-        public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.TopLeft;
+        public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.FreeDrag;
+        public OverlayPosition OverlayFixedPosition { get; set; } = OverlayPosition.TopLeft;
+        public bool HideWidget { get; set; } = false;
+        public bool OverlayCompact { get; set; } = false;
         // WPF device-independent coordinates; null means no saved drag position.
         public double? OverlayLeft { get; set; }
         public double? OverlayTop { get; set; }
-        public bool FocusGrabberEnabled { get; set; } = false;
+        public bool FocusGrabberEnabled { get; set; } = true;
         public int FocusGrabberIntervalMinutes { get; set; } = 5;
         public int SnoozeMinutes { get; set; } = 10;
         public bool WorkCompletionSoundEnabled { get; set; } = true;

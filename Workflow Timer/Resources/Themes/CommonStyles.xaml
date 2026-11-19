@@ -4,4 +4,43 @@
         <Setter Property="BorderBrush" Value="{DynamicResource WorkflowBorderBrush}"/>
         <Setter Property="Background" Value="{DynamicResource WorkflowPanelBrush}"/>
     </Style>
+    <Style x:Key="WorkflowPrimaryButton" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource WorkflowAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource WorkflowAccentTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WorkflowAccentBrush}"/>
+        <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="ButtonFrame" Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="5" Padding="{TemplateBinding Padding}">
+                        <ContentPresenter RecognizesAccessKey="True" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ButtonFrame" Property="Opacity" Value="0.86"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="ButtonFrame" Property="Opacity" Value="0.70"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="ButtonFrame" Property="BorderBrush" Value="{DynamicResource WorkflowTextBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="ButtonFrame" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style x:Key="WorkflowDangerButton" TargetType="Button" BasedOn="{StaticResource WorkflowPrimaryButton}">
+        <Setter Property="Background" Value="{DynamicResource WorkflowDangerButtonBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource WorkflowDangerButtonBrush}"/>
+    </Style>
 </ResourceDictionary>

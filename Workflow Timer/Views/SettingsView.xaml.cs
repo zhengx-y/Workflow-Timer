@@ -17,6 +17,12 @@ namespace Workflow_Timer.Views
     public partial class SettingsView : Window
     {
         private readonly Action<Settings> _saveSettings;
+        private readonly Settings _savedSettings;
+        private AppThemeMode _previewedTheme;
+        private bool _committed;
+        private bool _populating;
+        private bool _applyingPreview;
+        private bool _dirtyRefreshQueued;
         private Settings _draft = new();
         public bool ResetDataRequested { get; private set; }
 
@@ -30,22 +36,52 @@ namespace Workflow_Timer.Views
         {
             InitializeComponent();
             _saveSettings = saveSettings;
+            _savedSettings = currentSettings.Copy();
+            if (_savedSettings.OverlayPosition != OverlayPosition.FreeDrag)
+                _savedSettings.OverlayFixedPosition = _savedSettings.OverlayPosition;
+            _previewedTheme = currentSettings.Theme;
             ThemeBox.ItemsSource = Enum.GetValues<AppThemeMode>();
             PositionBox.ItemsSource = new Dictionary<OverlayPosition, string>
             {
                 [OverlayPosition.TopLeft] = "Top left",
+                [OverlayPosition.TopCenter] = "Top center",
                 [OverlayPosition.TopRight] = "Top right",
+                [OverlayPosition.CenterLeft] = "Center left",
+                [OverlayPosition.Center] = "Center",
+                [OverlayPosition.CenterRight] = "Center right",
                 [OverlayPosition.BottomLeft] = "Bottom left",
+                [OverlayPosition.BottomCenter] = "Bottom center",
                 [OverlayPosition.BottomRight] = "Bottom right",
-                [OverlayPosition.FreeDrag] = "Free drag"
+                [OverlayPosition.LastFreeDrag] = "Last free drag position"
             };
             DataContext = new SettingsCommands(Save, () => DialogResult = false,
-                () => Populate(new Settings()));
+                () => Populate(new Settings
+                {
+                    FirstLaunchSetupCompleted = _savedSettings.FirstLaunchSetupCompleted,
+                    NeverShowTutorial = _draft.NeverShowTutorial
+                }));
             Populate(currentSettings);
+            FreeDragCheck.Checked += (_, _) => PositionBox.IsEnabled = false;
+            FreeDragCheck.Unchecked += (_, _) => PositionBox.IsEnabled = true;
+            ThemeBox.SelectionChanged += (_, _) =>
+            {
+                if (!_populating) PreviewTheme();
+            };
+            AddHandler(global::System.Windows.Controls.Primitives.Selector.SelectionChangedEvent,
+                new SelectionChangedEventHandler((_, _) => QueueDirtyRefresh()));
+            AddHandler(global::System.Windows.Controls.Primitives.ToggleButton.CheckedEvent,
+                new RoutedEventHandler((_, _) => QueueDirtyRefresh()));
+            AddHandler(global::System.Windows.Controls.Primitives.ToggleButton.UncheckedEvent,
+                new RoutedEventHandler((_, _) => QueueDirtyRefresh()));
+            AddHandler(TextBox.TextChangedEvent, new TextChangedEventHandler((_, _) => QueueDirtyRefresh()));
             InputLanguageManager.Current.InputLanguageChanged += InputLanguageChanged;
             Activated += (_, _) => RefreshKeyLabels(HotkeysList);
             Closed += (_, _) =>
+            {
                 InputLanguageManager.Current.InputLanguageChanged -= InputLanguageChanged;
+                if (!_committed && _previewedTheme != _savedSettings.Theme)
+                    Workflow_Timer.Services.System.ThemeService.Apply(_savedSettings.Theme);
+            };
         }
 
         private void InputLanguageChanged(object sender, InputLanguageEventArgs e)
@@ -64,43 +100,115 @@ namespace Workflow_Timer.Views
 
         private void Populate(Settings settings)
         {
-            _draft = settings.Copy();
-            HotkeysList.ItemsSource = _draft.Hotkeys.OrderBy(binding => binding.Action).ToList();
-            StartupCheck.IsChecked = settings.StartWithWindows;
-            TrayCheck.IsChecked = settings.MinimizeToTray;
-            ThemeBox.SelectedItem = settings.Theme;
-            PositionBox.SelectedValue = settings.OverlayPosition;
-            FocusCheck.IsChecked = settings.FocusGrabberEnabled;
-            IntervalBox.Text = settings.FocusGrabberIntervalMinutes.ToString();
-            SnoozeBox.Text = settings.SnoozeMinutes.ToString();
-            WorkSoundCheck.IsChecked = settings.WorkCompletionSoundEnabled;
-            BreakSoundCheck.IsChecked = settings.BreakCompletionSoundEnabled;
-            ReminderSoundCheck.IsChecked = settings.FocusReminderSoundEnabled;
-            ErrorText.Text = string.Empty;
+            _populating = true;
+            try
+            {
+                _draft = settings.Copy();
+                HotkeysList.ItemsSource = _draft.Hotkeys.OrderBy(binding => binding.Action).ToList();
+                StartupCheck.IsChecked = settings.StartWithWindows;
+                TrayCheck.IsChecked = settings.MinimizeToTray;
+                ThemeBox.SelectedItem = settings.Theme;
+                HideWidgetCheck.IsChecked = settings.HideWidget;
+                FreeDragCheck.IsChecked = settings.OverlayPosition == OverlayPosition.FreeDrag;
+                PositionBox.SelectedValue = settings.OverlayPosition == OverlayPosition.FreeDrag
+                    ? settings.OverlayFixedPosition : settings.OverlayPosition;
+                PositionBox.IsEnabled = FreeDragCheck.IsChecked != true;
+                FocusCheck.IsChecked = settings.FocusGrabberEnabled;
+                IntervalBox.Text = settings.FocusGrabberIntervalMinutes.ToString();
+                SnoozeBox.Text = settings.SnoozeMinutes.ToString();
+                WorkSoundCheck.IsChecked = settings.WorkCompletionSoundEnabled;
+                BreakSoundCheck.IsChecked = settings.BreakCompletionSoundEnabled;
+                ReminderSoundCheck.IsChecked = settings.FocusReminderSoundEnabled;
+                ErrorText.Text = string.Empty;
+            }
+            finally { _populating = false; }
+            PreviewTheme();
+            RefreshDirtyIndicator();
         }
 
-        private void Save()
+        private void PreviewTheme()
         {
+            if (_applyingPreview || ThemeBox.SelectedItem is not AppThemeMode theme || theme == _previewedTheme)
+                return;
+            _applyingPreview = true;
+            try
+            {
+                Workflow_Timer.Services.System.ThemeService.Apply(theme);
+                _previewedTheme = theme;
+            }
+            catch (Exception ex)
+            {
+                ErrorText.Text = "Could not preview theme: " + ex.Message;
+            }
+            finally { _applyingPreview = false; }
+        }
+
+        private void QueueDirtyRefresh()
+        {
+            if (_populating || _dirtyRefreshQueued) return;
+            _dirtyRefreshQueued = true;
+            Dispatcher.BeginInvoke(global::System.Windows.Threading.DispatcherPriority.Background,
+                new Action(() =>
+                {
+                    _dirtyRefreshQueued = false;
+                    RefreshDirtyIndicator();
+                }));
+        }
+
+        private void RefreshDirtyIndicator()
+        {
+            bool dirty = !TryReadCandidate(out var candidate) || !SameSettings(candidate, _savedSettings);
+            UnsavedSettingsText.Visibility = dirty ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private static bool SameSettings(Settings a, Settings b) =>
+            a.NeverShowTutorial == b.NeverShowTutorial &&
+            a.FirstLaunchSetupCompleted == b.FirstLaunchSetupCompleted &&
+            a.StartWithWindows == b.StartWithWindows && a.MinimizeToTray == b.MinimizeToTray &&
+            a.Theme == b.Theme && a.OverlayPosition == b.OverlayPosition &&
+            a.OverlayFixedPosition == b.OverlayFixedPosition && a.HideWidget == b.HideWidget &&
+            a.OverlayCompact == b.OverlayCompact &&
+            a.OverlayLeft == b.OverlayLeft && a.OverlayTop == b.OverlayTop &&
+            a.FocusGrabberEnabled == b.FocusGrabberEnabled &&
+            a.FocusGrabberIntervalMinutes == b.FocusGrabberIntervalMinutes && a.SnoozeMinutes == b.SnoozeMinutes &&
+            a.WorkCompletionSoundEnabled == b.WorkCompletionSoundEnabled &&
+            a.BreakCompletionSoundEnabled == b.BreakCompletionSoundEnabled &&
+            a.FocusReminderSoundEnabled == b.FocusReminderSoundEnabled &&
+            a.Hotkeys.OrderBy(h => h.Action).Select(h => (h.Action, h.Modifier1, h.Modifier2, h.Key))
+                .SequenceEqual(b.Hotkeys.OrderBy(h => h.Action).Select(h => (h.Action, h.Modifier1, h.Modifier2, h.Key)));
+
+        private bool TryReadCandidate(out Settings candidate)
+        {
+            candidate = _draft.Copy();
             if (PositionBox.SelectedValue is not OverlayPosition position ||
+                ThemeBox.SelectedItem is not AppThemeMode theme ||
                 !int.TryParse(IntervalBox.Text, out int interval) ||
                 !int.TryParse(SnoozeBox.Text, out int snooze))
-            {
-                ErrorText.Text = "Enter whole numbers for both durations.";
-                return;
-            }
+                return false;
 
             // Preserve saved drag coordinates when changing unrelated preferences.
-            var candidate = _draft.Copy();
             candidate.StartWithWindows = StartupCheck.IsChecked == true;
             candidate.MinimizeToTray = TrayCheck.IsChecked == true;
-            candidate.Theme = ThemeBox.SelectedItem is AppThemeMode theme ? theme : AppThemeMode.Light;
-            candidate.OverlayPosition = position;
+            candidate.Theme = theme;
+            candidate.HideWidget = HideWidgetCheck.IsChecked == true;
+            candidate.OverlayFixedPosition = position;
+            candidate.OverlayPosition = FreeDragCheck.IsChecked == true ? OverlayPosition.FreeDrag : position;
             candidate.FocusGrabberEnabled = FocusCheck.IsChecked == true;
             candidate.FocusGrabberIntervalMinutes = interval;
             candidate.SnoozeMinutes = snooze;
             candidate.WorkCompletionSoundEnabled = WorkSoundCheck.IsChecked == true;
             candidate.BreakCompletionSoundEnabled = BreakSoundCheck.IsChecked == true;
             candidate.FocusReminderSoundEnabled = ReminderSoundCheck.IsChecked == true;
+            return true;
+        }
+
+        private void Save()
+        {
+            if (!TryReadCandidate(out var candidate))
+            {
+                ErrorText.Text = "Select a theme and widget position, and enter whole numbers for both durations.";
+                return;
+            }
 
             try
             {
@@ -113,7 +221,18 @@ namespace Workflow_Timer.Views
                 return;
             }
 
+            _committed = true;
             DialogResult = true;
+        }
+
+        private void OpenTutorial_Click(object sender, RoutedEventArgs e)
+        {
+            var tutorial = new TutorialView(_draft.NeverShowTutorial, neverShow =>
+            {
+                _draft.NeverShowTutorial = neverShow;
+                RefreshDirtyIndicator();
+            }) { Owner = this };
+            tutorial.ShowDialog();
         }
 
         private void CreateDesktopShortcut_Click(object sender, RoutedEventArgs e)
@@ -173,6 +292,7 @@ namespace Workflow_Timer.Views
             e.Handled = true;
             binding.Key = name;
             box.GetBindingExpression(TextBox.TextProperty)?.UpdateTarget();
+            QueueDirtyRefresh();
         }
 
         private void ClearHotkeys_Click(object sender, RoutedEventArgs e)
@@ -185,6 +305,7 @@ namespace Workflow_Timer.Views
             }
             HotkeysList.ItemsSource = null;
             HotkeysList.ItemsSource = _draft.Hotkeys.OrderBy(binding => binding.Action).ToList();
+            QueueDirtyRefresh();
         }
     }
 }

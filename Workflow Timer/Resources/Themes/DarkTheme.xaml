@@ -1,7 +1,13 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="WorkflowWindowBrush" Color="#FF202020"/>
-    <SolidColorBrush x:Key="WorkflowPanelBrush" Color="#FF292929"/>
+    <SolidColorBrush x:Key="WorkflowWindowBrush" Color="#FF171D27"/>
+    <SolidColorBrush x:Key="WorkflowPanelBrush" Color="#FF222C3C"/>
+    <SolidColorBrush x:Key="WorkflowTasksBrush" Color="#FF20352F"/>
+    <SolidColorBrush x:Key="WorkflowHistoryBrush" Color="#FF302B40"/>
+    <SolidColorBrush x:Key="WorkflowAccentBrush" Color="#FF3573B9"/>
+    <SolidColorBrush x:Key="WorkflowAccentTextBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="WorkflowDangerButtonBrush" Color="#FFA23849"/>
+    <SolidColorBrush x:Key="WorkflowTimerAccentBrush" Color="#FF9BC8FF"/>
     <SolidColorBrush x:Key="WorkflowTextBrush" Color="#FFF1F1F1"/>
     <SolidColorBrush x:Key="WorkflowMutedBrush" Color="#FFB9B9B9"/>
     <SolidColorBrush x:Key="WorkflowBorderBrush" Color="#FF606060"/>
@@ -9,8 +15,8 @@
     <SolidColorBrush x:Key="WorkflowSplitterBrush" Color="#FF707070"/>
     <SolidColorBrush x:Key="WorkflowWarningBrush" Color="#FFFFC46B"/>
     <SolidColorBrush x:Key="WorkflowErrorBrush" Color="#FFFF9292"/>
-    <SolidColorBrush x:Key="WorkflowOverlayBrush" Color="#FF292929"/>
-    <SolidColorBrush x:Key="WorkflowOverlayBorderBrush" Color="#FF808080"/>
+    <SolidColorBrush x:Key="WorkflowOverlayBrush" Color="#FF222C3C"/>
+    <SolidColorBrush x:Key="WorkflowOverlayBorderBrush" Color="#FF547DAA"/>
     <SolidColorBrush x:Key="WorkflowFocusBannerBrush" Color="#FF3D3020"/>
     <SolidColorBrush x:Key="WorkflowFocusBannerBorderBrush" Color="#FFB88632"/>
     <SolidColorBrush x:Key="WorkflowFocusBannerBlinkBrush" Color="#FF534024"/>

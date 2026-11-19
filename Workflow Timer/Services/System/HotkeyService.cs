@@ -16,6 +16,7 @@ namespace Workflow_Timer.Services.System
         private readonly HwndSource _source;
         private readonly IntPtr _handle;
         private readonly Dictionary<int, HotkeyBinding> _registered = new();
+        private readonly HashSet<int> _pendingRelease = new();
         private bool _disposed;
 
         public event EventHandler<HotkeyAction>? HotkeyPressed;
@@ -29,8 +30,13 @@ namespace Workflow_Timer.Services.System
 
         // The modifier mask and Windows virtual-key code uniquely identify the
         // combination, regardless of the order of the two modifiers.
-        private static int Id(HotkeyBinding binding) =>
-            (int)((binding.ModifierMask << 8) | HotkeyKeyHelper.GetVirtualKey(binding.Key));
+        private static bool TryGetId(HotkeyBinding binding, out int id)
+        {
+            id = 0;
+            if (!HotkeyKeyHelper.TryGetVirtualKey(binding.Key, out uint key)) return false;
+            id = (int)((binding.ModifierMask << 8) | key);
+            return true;
+        }
 
         public List<HotkeyBinding> Snapshot() =>
             _registered.Values.Select(binding => binding.Copy()).ToList();
@@ -38,74 +44,56 @@ namespace Workflow_Timer.Services.System
         // At launch, keep each successful registration and list unavailable keys.
         public List<string> RegisterInitial(IEnumerable<HotkeyBinding> bindings)
         {
-            var errors = new List<string>();
-            foreach (var binding in bindings.Where(b => b.IsAssigned))
-            {
-                int id = Id(binding);
-                if (TryRegister(id, binding, out string error))
-                    _registered.Add(id, binding.Copy());
-                else
-                    errors.Add(error);
-            }
-            return errors;
+            return ApplyBestEffort(bindings);
         }
 
-        // Register additions before releasing previous combinations. This means
-        // an unavailable new shortcut leaves the existing registrations intact.
-        public void Apply(IEnumerable<HotkeyBinding> bindings)
+        // Each gesture is independent: unavailable combinations never block settings.
+        public void Apply(IEnumerable<HotkeyBinding> bindings) => ApplyBestEffort(bindings);
+
+        private List<string> ApplyBestEffort(IEnumerable<HotkeyBinding> bindings)
         {
-            var desired = bindings.Where(b => b.IsAssigned)
-                .ToDictionary(Id, b => b.Copy());
-            var additions = new List<int>();
-            var removals = new List<int>();
-            try
+            var errors = new List<string>();
+            var desired = new Dictionary<int, HotkeyBinding>();
+            foreach (var binding in bindings.Where(b => b.IsAssigned))
             {
-                foreach (var pair in desired)
-                {
-                    if (_registered.ContainsKey(pair.Key))
-                        continue;
-                    if (!TryRegister(pair.Key, pair.Value, out string error))
-                        throw new InvalidOperationException(error);
-                    additions.Add(pair.Key);
-                }
-
-                foreach (var pair in _registered)
-                {
-                    if (desired.ContainsKey(pair.Key))
-                        continue;
-                    if (!UnregisterHotKey(_handle, pair.Key))
-                        throw new InvalidOperationException($"Could not release {pair.Value.Gesture}.");
-                    removals.Add(pair.Key);
-                }
-            }
-            catch (Exception error)
-            {
-                var rollbackErrors = new List<string>();
-                foreach (int id in additions)
-                {
-                    if (!UnregisterHotKey(_handle, id))
-                    {
-                        _registered[id] = desired[id];
-                        rollbackErrors.Add($"Could not release {desired[id].Gesture}.");
-                    }
-                }
-                foreach (int id in removals)
-                {
-                    if (!TryRegister(id, _registered[id], out string restoreError))
-                    {
-                        _registered.Remove(id);
-                        rollbackErrors.Add(restoreError);
-                    }
-                }
-                if (rollbackErrors.Count > 0)
-                    throw new InvalidOperationException(error.Message + " Restore failed: " +
-                        string.Join(" ", rollbackErrors), error);
-                throw;
+                if (TryGetId(binding, out int id)) desired.TryAdd(id, binding.Copy());
+                else errors.Add($"{binding.ActionName}: unsupported key {binding.Key}.");
             }
 
-            _registered.Clear();
+            foreach (int id in _pendingRelease.ToArray())
+                if (UnregisterHotKey(_handle, id)) _pendingRelease.Remove(id);
+
+            foreach (int id in _registered.Keys.ToArray())
+            {
+                if (desired.ContainsKey(id)) continue;
+                if (!UnregisterHotKey(_handle, id))
+                {
+                    _pendingRelease.Add(id);
+                    errors.Add($"Could not release {_registered[id].Gesture}.");
+                }
+                // Never dispatch a gesture the user has removed, even if native release failed.
+                _registered.Remove(id);
+            }
+
             foreach (var pair in desired)
-                _registered.Add(pair.Key, pair.Value);
+            {
+                if (_registered.ContainsKey(pair.Key))
+                {
+                    _registered[pair.Key] = pair.Value;
+                    continue;
+                }
+                if (_pendingRelease.Contains(pair.Key))
+                {
+                    errors.Add($"{pair.Value.ActionName}: previous registration could not be released.");
+                    continue;
+                }
+                if (TryRegister(pair.Key, pair.Value, out string error))
+                    _registered.Add(pair.Key, pair.Value);
+                else errors.Add(error);
+            }
+            foreach (string error in errors)
+                global::System.Diagnostics.Trace.TraceWarning(error);
+            return errors;
         }
 
         private bool TryRegister(int id, HotkeyBinding binding, out string error)
@@ -139,6 +127,9 @@ namespace Workflow_Timer.Services.System
             _disposed = true;
             foreach (int id in _registered.Keys)
                 UnregisterHotKey(_handle, id);
+            foreach (int id in _pendingRelease)
+                UnregisterHotKey(_handle, id);
+            _pendingRelease.Clear();
             _registered.Clear();
             if (!_source.IsDisposed)
                 _source.RemoveHook(WindowHook);

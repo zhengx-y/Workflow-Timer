@@ -11,7 +11,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
     </UserControl.Resources>
 
-    <Grid Margin="30">
+    <Grid Margin="12,18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -21,27 +21,28 @@
 
         <StackPanel Grid.Row="0" HorizontalAlignment="Center">
             <TextBlock Text="{Binding SelectedPreset.Name}"
-                       FontSize="20" HorizontalAlignment="Center"/>
+                       FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap"/>
             <TextBlock Text="{Binding State}"
-                       FontSize="14" HorizontalAlignment="Center"
+                       FontSize="15" HorizontalAlignment="Center" Foreground="{DynamicResource WorkflowMutedBrush}"
                        Margin="0,5,0,0"/>
         </StackPanel>
 
         <TextBlock Grid.Row="1"
            Text="{Binding RemainingTimeText}"
            FontSize="72"
+           Foreground="{DynamicResource WorkflowTimerAccentBrush}"
            FontWeight="Bold"
            HorizontalAlignment="Center"
            VerticalAlignment="Center"/>
 
         <!-- Start/Stop swap places; Pause/Resume swap places. -->
         <WrapPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,10">
-            <Button Content="Start"
+            <Button Content="Start" Style="{StaticResource WorkflowPrimaryButton}"
                     Command="{Binding TimerCommands.StartCommand}"
                     Visibility="{Binding CanStartTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
 
-            <Button Content="Stop"
+            <Button Content="Stop" Style="{StaticResource WorkflowDangerButton}"
                     Command="{Binding TimerCommands.StopCommand}"
                     Visibility="{Binding HasActiveTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
@@ -51,7 +52,7 @@
                     Visibility="{Binding CanPauseTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
 
-            <Button Content="Resume"
+            <Button Content="Resume" Style="{StaticResource WorkflowPrimaryButton}"
                     Command="{Binding TimerCommands.ResumeCommand}"
                     Visibility="{Binding CanResumeTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>

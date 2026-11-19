@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Automation;
 using System.Windows.Threading;
 using Workflow_Timer.Enums;
 
@@ -12,18 +13,22 @@ namespace Workflow_Timer.Views
         private bool _isBlinking;
         private int _blinkCount;
         private string _currentState = string.Empty;
-        private OverlayPosition _position = OverlayPosition.TopLeft;
+        private OverlayPosition _position = OverlayPosition.FreeDrag;
+        private double? _savedLeft, _savedTop;
+        private bool _compact;
+        private bool _active;
         private const double EdgeMargin = 12;
 
         public event EventHandler? PauseRequested;
         public event EventHandler? ResumeRequested;
         public event EventHandler<Point>? PositionDragged;
+        public event EventHandler<bool>? CompactChanged;
 
         public OverlayWindow()
         {
             InitializeComponent();
             WindowStartupLocation = WindowStartupLocation.Manual;
-            ApplyPosition(OverlayPosition.TopLeft, null, null);
+            ApplyPosition(OverlayPosition.FreeDrag, null, null);
             _blinkTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(250)
@@ -34,18 +39,24 @@ namespace Workflow_Timer.Views
         public void ApplyPosition(OverlayPosition position, double? savedLeft, double? savedTop)
         {
             _position = position;
-            StateText.Cursor = position == OverlayPosition.FreeDrag ? Cursors.SizeAll : Cursors.Arrow;
-            StateText.ToolTip = position == OverlayPosition.FreeDrag ? "Drag to move widget" : null;
+            _savedLeft = savedLeft;
+            _savedTop = savedTop;
+            StateText.Cursor = TimeText.Cursor = position == OverlayPosition.FreeDrag ? Cursors.SizeAll : Cursors.Arrow;
+            StateText.ToolTip = TimeText.ToolTip = position == OverlayPosition.FreeDrag ? "Drag to move widget" : null;
 
             // Primary monitor work area, in WPF device-independent coordinates.
             Rect area = SystemParameters.WorkArea;
             double left = area.Left + EdgeMargin;
             double top = area.Top + EdgeMargin;
-            if (position == OverlayPosition.TopRight || position == OverlayPosition.BottomRight)
+            if (position is OverlayPosition.TopRight or OverlayPosition.CenterRight or OverlayPosition.BottomRight)
                 left = area.Right - Width - EdgeMargin;
-            if (position == OverlayPosition.BottomLeft || position == OverlayPosition.BottomRight)
+            if (position is OverlayPosition.TopCenter or OverlayPosition.Center or OverlayPosition.BottomCenter)
+                left = area.Left + (area.Width - Width) / 2;
+            if (position is OverlayPosition.BottomLeft or OverlayPosition.BottomCenter or OverlayPosition.BottomRight)
                 top = area.Bottom - Height - EdgeMargin;
-            if (position == OverlayPosition.FreeDrag &&
+            if (position is OverlayPosition.CenterLeft or OverlayPosition.Center or OverlayPosition.CenterRight)
+                top = area.Top + (area.Height - Height) / 2;
+            if ((position is OverlayPosition.FreeDrag or OverlayPosition.LastFreeDrag) &&
                 savedLeft is double x && savedTop is double y &&
                 double.IsFinite(x) && double.IsFinite(y))
             {
@@ -76,7 +87,32 @@ namespace Workflow_Timer.Views
             DragMove();
             PlaceWithinWorkArea(Left, Top);
             if (Left != oldLeft || Top != oldTop)
+            {
+                _savedLeft = Left;
+                _savedTop = Top;
                 PositionDragged?.Invoke(this, new Point(Left, Top));
+            }
+        }
+
+        public void SetCompact(bool compact)
+        {
+            _compact = compact;
+            Width = compact ? 220 : 300;
+            Height = compact ? 70 : 222;
+            TimeText.FontSize = compact ? 24 : 32;
+            StateText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            ActionPanel.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+            PauseResumeButton.Visibility = !compact && _active ? Visibility.Visible : Visibility.Collapsed;
+            CompactButton.Content = compact ? "+" : "−";
+            CompactButton.ToolTip = compact ? "Expand widget" : "Minimize widget";
+            AutomationProperties.SetName(CompactButton, compact ? "Expand widget" : "Minimize widget");
+            ApplyPosition(_position, _savedLeft, _savedTop);
+        }
+
+        private void CompactButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetCompact(!_compact);
+            CompactChanged?.Invoke(this, _compact);
         }
 
         public void UpdateDisplay(string state, TimeSpan remainingTime,
@@ -88,6 +124,7 @@ namespace Workflow_Timer.Views
             bool paused = string.Equals(state, "Paused", StringComparison.OrdinalIgnoreCase);
             bool active = paused || string.Equals(state, "Working", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(state, "Break", StringComparison.OrdinalIgnoreCase);
+            _active = active;
             // A new session can start immediately from the break reminder.
             // Do not let the previous session's blink hide the new countdown.
             if (active && _isBlinking)
@@ -97,7 +134,7 @@ namespace Workflow_Timer.Views
                 _blinkCount = 0;
                 Opacity = 1.0;
             }
-            PauseResumeButton.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
+            PauseResumeButton.Visibility = active && !_compact ? Visibility.Visible : Visibility.Collapsed;
             PauseResumeButton.Content = paused ? "Resume" : "Pause";
             NextActionNameText.Text = string.IsNullOrWhiteSpace(nextActionName)
                 ? "No upcoming actions" : nextActionName;

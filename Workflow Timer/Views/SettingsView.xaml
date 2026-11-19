@@ -4,18 +4,22 @@
         Title="Workflow Timer — Settings"
         Background="{DynamicResource WorkflowWindowBrush}"
         Foreground="{DynamicResource WorkflowTextBrush}"
+        FontSize="14"
         Icon="pack://application:,,,/Resources/Icons/Workflow_Timer.ico"
         Width="660" Height="740" MinWidth="520" MinHeight="380"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
     <DockPanel Margin="16">
         <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <TextBlock x:Name="UnsavedSettingsText" Text="Unsaved settings — Save to apply or Cancel to discard."
+                       Foreground="{DynamicResource WorkflowWarningBrush}" FontWeight="SemiBold"
+                       TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed"/>
             <TextBlock x:Name="ErrorText" Foreground="{DynamicResource WorkflowErrorBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
             <DockPanel LastChildFill="False">
                 <Button DockPanel.Dock="Left" Content="Reset defaults" Padding="10,5"
                         Command="{Binding ResetDefaultsCommand}"/>
                 <Button DockPanel.Dock="Right" Content="Cancel" Padding="12,5"
                         IsCancel="True" Command="{Binding CancelCommand}"/>
-                <Button DockPanel.Dock="Right" Content="Save" Padding="12,5" Margin="0,0,8,0"
+                <Button DockPanel.Dock="Right" Content="Save" Style="{StaticResource WorkflowPrimaryButton}" Padding="12,5" Margin="0,0,8,0"
                         IsDefault="True" Command="{Binding SaveCommand}"/>
             </DockPanel>
         </StackPanel>
@@ -24,11 +28,19 @@
                 <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
                 <TextBlock Text="Configure startup, widget placement, focus reminders, sounds and global keyboard shortcuts."
                            TextWrapping="Wrap" Margin="0,6,0,14"/>
+                <GroupBox Header="Help and introduction" Margin="0,0,0,10">
+                    <StackPanel Margin="10">
+                        <Button Content="Open Introduction and Tutorial" Click="OpenTutorial_Click"
+                                HorizontalAlignment="Left" Padding="10,5"/>
+                        <TextBlock Text="Review the guide at any time."
+                                   TextWrapping="Wrap" Margin="0,5,0,0"/>
+                    </StackPanel>
+                </GroupBox>
                 <GroupBox Header="Appearance" Margin="0,0,0,10">
                     <StackPanel Margin="10">
                         <TextBlock Text="Theme"/>
                         <ComboBox x:Name="ThemeBox" Margin="0,4,0,0"/>
-                        <TextBlock Text="The theme changes when you save settings."
+                        <TextBlock Text="Theme changes are previewed immediately. Save to keep the selected theme or Cancel to restore it."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </GroupBox>
@@ -48,10 +60,16 @@
                 </GroupBox>
                 <GroupBox Header="Widget" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Widget position"/>
+                        <CheckBox x:Name="HideWidgetCheck" Content="Hide widget" Margin="0,0,0,8"/>
+                        <TextBlock Text="Keep the countdown running without showing the floating widget."
+                                   TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <CheckBox x:Name="FreeDragCheck" Content="Free drag" Margin="0,0,0,8"/>
+                        <TextBlock Text="Fixed widget position"/>
                         <ComboBox x:Name="PositionBox" Margin="0,4,0,0" DisplayMemberPath="Value" SelectedValuePath="Key"/>
-                        <TextBlock Text="Free drag: drag the widget by its top status label. Its position on the primary display is remembered."
+                        <TextBlock Text="Free drag: drag the status label or countdown in either widget size. The last dragged position on the primary display is remembered."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <TextBlock Text="Use the minimize / expand button on the widget to switch between compact and full views."
+                                   TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </StackPanel>
                 </GroupBox>
                 <GroupBox Header="Focus reminders" Margin="0,0,0,10">
@@ -129,7 +147,7 @@
                         <TextBlock Text="Delete saved application data and restart with factory defaults. This cannot be undone."
                                    TextWrapping="Wrap" Margin="0,12,0,6"/>
                         <Button Content="Delete Data..." Click="DeleteData_Click" HorizontalAlignment="Left" Padding="10,5"
-                                Foreground="{DynamicResource WorkflowErrorBrush}"/>
+                                Style="{StaticResource WorkflowDangerButton}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

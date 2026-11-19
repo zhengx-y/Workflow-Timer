@@ -2,7 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:Workflow_Timer.Views.Controls"
-             FontSize="12">
+             FontSize="13">
     <Border Style="{StaticResource WorkflowPanelFrame}" BorderThickness="1" CornerRadius="6"
             Padding="8" Margin="0,6,0,0">
         <Grid>
@@ -16,10 +16,10 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <DockPanel Grid.Row="0" Margin="0,0,0,5">
-                <Button DockPanel.Dock="Right" Content="+" Width="30" MinWidth="0" MinHeight="24"
-                        Padding="0" FontSize="16" ToolTip="Add a scheduled action"
+                <Button DockPanel.Dock="Right" Content="Add Action" Style="{StaticResource WorkflowPrimaryButton}"
+                        Padding="12,4" ToolTip="Add a scheduled action"
                         IsEnabled="{Binding CanEditSettings}" Command="{Binding AddScheduledActionCommand}"/>
-                <TextBlock Text="Scheduled Actions" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                <TextBlock Text="Scheduled Actions" FontSize="19" FontWeight="Bold" VerticalAlignment="Center"/>
             </DockPanel>
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
                           CanContentScroll="False" Margin="0,0,0,8">

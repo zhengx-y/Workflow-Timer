@@ -15,7 +15,7 @@
             </StackPanel.Resources>
 
             <TextBlock Text="Preset Manager"
-                       FontSize="18"
+                       FontSize="20"
                        FontWeight="Bold"
                        Margin="0,0,0,10"/>
 
@@ -35,13 +35,13 @@
                           SelectedItem="{Binding SelectedPreset, Mode=TwoWay}"/>
 
                 <Button Grid.Column="1"
-                        Content="New"
+                        Content="New preset" Style="{StaticResource WorkflowPrimaryButton}"
                         Padding="12,5"
                         Margin="0,0,6,0"
                         Command="{Binding PresetCommands.CreatePresetCommand}"/>
 
                 <Button Grid.Column="2"
-                        Content="Delete"
+                        Content="Delete" Style="{StaticResource WorkflowDangerButton}"
                         Padding="12,5"
                         Command="{Binding PresetCommands.DeletePresetCommand}"/>
             </Grid>
@@ -76,40 +76,25 @@
                                         Mode=TwoWay,
                                         UpdateSourceTrigger=PropertyChanged}"/>
 
-                <TextBlock Grid.Row="1"
-                           Grid.Column="0"
-                           Text="Work:"
-                           VerticalAlignment="Center"
-                           Margin="0,0,10,8"/>
-
-                <controls:TimeSpinnerControl Grid.Row="1"
-                         Grid.Column="1"
-                         Margin="0,0,8,8"
-                         DurationText="{Binding PresetWorkDraft,
-                                        Mode=TwoWay,
-                                        UpdateSourceTrigger=PropertyChanged}"/>
-
-                <TextBlock Grid.Row="1"
-                           Grid.Column="2"
-                           Text="Break:"
-                           VerticalAlignment="Center"
-                           Margin="0,0,10,8"/>
-
-                <controls:TimeSpinnerControl Grid.Row="1"
-                         Grid.Column="3"
-                         Margin="0,0,0,8"
-                         DurationText="{Binding PresetBreakDraft,
-                                        Mode=TwoWay,
-                                        UpdateSourceTrigger=PropertyChanged}"/>
+                <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,0,0,8">
+                    <StackPanel Margin="0,0,20,0">
+                        <TextBlock Text="Work duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <controls:TimeSpinnerControl DurationText="{Binding PresetWorkDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                    <StackPanel>
+                        <TextBlock Text="Break duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <controls:TimeSpinnerControl DurationText="{Binding PresetBreakDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                    </StackPanel>
+                </StackPanel>
 
                 <TextBlock Grid.Row="2"
                            Grid.Column="0"
                            Grid.ColumnSpan="4"
                            Text="Hours : minutes : seconds — scroll, use arrows, or click to type."
                            Foreground="{DynamicResource WorkflowMutedBrush}"
-                           FontSize="11"/>
+                           FontSize="13" TextWrapping="Wrap"/>
             </Grid>
-            <TextBlock Text="Changes save automatically." FontSize="11"
+            <TextBlock Text="Changes save automatically." FontSize="13"
                        Foreground="{DynamicResource WorkflowMutedBrush}" Margin="0,4,0,0"/>
             <TextBlock Text="{Binding PresetEditError}"
                        Foreground="{DynamicResource WorkflowWarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap"
