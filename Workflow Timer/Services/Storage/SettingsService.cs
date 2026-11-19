@@ -56,6 +56,8 @@ namespace Workflow_Timer.Services.Storage
                 throw new InvalidDataException("Select a valid theme.");
             if (!Enum.IsDefined(settings.OverlayPosition))
                 throw new InvalidDataException("Select a valid widget position.");
+            if (!Enum.IsDefined(settings.OverlayFixedPosition) || settings.OverlayFixedPosition == OverlayPosition.FreeDrag)
+                throw new InvalidDataException("Select a valid fixed widget position.");
             if (settings.FocusGrabberIntervalMinutes < 1 || settings.FocusGrabberIntervalMinutes > 1440)
                 throw new InvalidDataException("Reminder interval must be between 1 and 1440 minutes.");
             if (settings.SnoozeMinutes < 1 || settings.SnoozeMinutes > 1440)
@@ -82,9 +84,9 @@ namespace Workflow_Timer.Services.Storage
                     throw new InvalidDataException($"{binding.ActionName}: select a supported key or leave it blank.");
                 if (binding.IsAssigned)
                 {
-                    if (!HotkeyKeyHelper.TryGetVirtualKey(binding.Key, out uint virtualKey))
-                        throw new InvalidDataException($"{binding.ActionName}: unsupported key {binding.Key}.");
-                    if (!gestures.Add((binding.ModifierMask, virtualKey)))
+                    // Unknown keys are kept in JSON but skipped by the registration service.
+                    if (HotkeyKeyHelper.TryGetVirtualKey(binding.Key, out uint virtualKey) &&
+                        !gestures.Add((binding.ModifierMask, virtualKey)))
                         throw new InvalidDataException($"Duplicate hotkey: {binding.Gesture}.");
                 }
             }

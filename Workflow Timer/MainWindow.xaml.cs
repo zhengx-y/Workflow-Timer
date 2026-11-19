@@ -27,10 +27,10 @@ namespace Workflow_Timer
         private HotkeyService? _hotkeyService;
         private TrayService? _trayService;
         private bool _restoringFromTray;
-        private bool _shortcutPromptChecked;
+        private WindowState _lastRestorableState = WindowState.Normal;
+        private bool _onboardingChecked;
         private bool _settingsOpen;
         private bool _dispatchingHotkey;
-        private string? _hotkeyWarning;
         private bool _reminderFocusDeferred;
         private bool _closing;
         private const double LeftPanelMin = 220;
@@ -145,9 +145,13 @@ namespace Workflow_Timer
         public MainWindow()
         {
             InitializeComponent();
+            CenterStartupWindow();
 
             var viewModel = new MainViewModel();
             DataContext = viewModel;
+            _lastRestorableState = viewModel.CurrentSettings.MainWindowMaximized
+                ? WindowState.Maximized : WindowState.Normal;
+            WindowState = _lastRestorableState;
             viewModel.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName == nameof(MainViewModel.CurrentSettings))
@@ -160,38 +164,57 @@ namespace Workflow_Timer
                 UpdateTray(viewModel);
                 if (DataContext is MainViewModel vm && vm.SettingsLoadWarning is string warning)
                     MessageBox.Show(this, warning, "Settings", MessageBoxButton.OK, MessageBoxImage.Warning);
-                if (_hotkeyWarning != null)
-                {
-                    MessageBox.Show(this, _hotkeyWarning, "Keyboard shortcuts",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
-                    _hotkeyWarning = null;
-                }
-                PromptForDesktopShortcut();
+                ShowOnboarding(viewModel);
             };
         }
 
-        private void PromptForDesktopShortcut()
+        private void CenterStartupWindow()
         {
-            if (_shortcutPromptChecked || _closing) return;
-            _shortcutPromptChecked = true;
+            // WorkArea excludes the Windows taskbar and is in WPF device-independent units.
+            // Set normal bounds before applying the saved maximized state.
+            Rect area = SystemParameters.WorkArea;
+            if (area.Width <= 0 || area.Height <= 0) return;
+
+            const double margin = 12;
+            MinWidth = Math.Min(MinWidth, area.Width);
+            MinHeight = Math.Min(MinHeight, area.Height);
+            Width = Math.Min(Width, Math.Max(MinWidth, area.Width - 2 * margin));
+            Height = Math.Min(Height, Math.Max(MinHeight, area.Height - 2 * margin));
+            Left = area.Left + (area.Width - Width) / 2;
+            Top = area.Top + (area.Height - Height) / 2;
+        }
+
+        private void ShowOnboarding(MainViewModel vm)
+        {
+            if (_onboardingChecked || _closing || vm.SettingsLoadWarning != null) return;
+            _onboardingChecked = true;
+            _settingsOpen = true;
             try
             {
-                if (ShortcutService.HasPrompted) return;
-                var answer = MessageBox.Show(this,
-                    "Welcome to Workflow Timer!\n\nWould you like to create a desktop shortcut?\n\n" +
-                    "You can also create one later in Settings.",
-                    "Workflow Timer", MessageBoxButton.YesNo, MessageBoxImage.Question,
-                    MessageBoxResult.No);
-                // Remember both Yes and No, even if shortcut creation fails.
-                ShortcutService.RememberPrompt();
-                if (answer == MessageBoxResult.Yes)
-                    ShortcutService.CreateDesktopShortcut();
+                if (!vm.CurrentSettings.NeverShowTutorial)
+                {
+                    var tutorial = new TutorialView(false, vm.SaveTutorialPreference) { Owner = this };
+                    if (tutorial.ShowDialog() != true) return;
+                }
+
+                // The old shortcut prompt marker identifies installations that already completed setup.
+                if (vm.CurrentSettings.FirstLaunchSetupCompleted || ShortcutService.HasPrompted) return;
+                var setup = new FirstLaunchSetupView(vm.CurrentSettings.StartWithWindows, (shortcut, autostart) =>
+                {
+                    if (shortcut) ShortcutService.CreateDesktopShortcut();
+                    var candidate = vm.CurrentSettings.Copy();
+                    candidate.StartWithWindows = autostart;
+                    candidate.FirstLaunchSetupCompleted = true;
+                    vm.SaveSettings(candidate);
+                }) { Owner = this };
+                setup.ShowDialog();
             }
             catch (Exception ex)
             {
-                MessageBox.Show(this, "Desktop shortcut setup could not be completed. You can try again in Settings.\n\n" +
+                MessageBox.Show(this, "First-launch setup could not be completed. You can try again in Settings.\n\n" +
                     ex.Message, "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
+            finally { _settingsOpen = false; }
         }
 
         protected override void OnClosing(global::System.ComponentModel.CancelEventArgs e)
@@ -211,7 +234,21 @@ namespace Workflow_Timer
             {
                 _closing = true;
                 if (DataContext is MainViewModel vm)
+                {
+                    if (!DataManagementService.ResetInProgress)
+                    {
+                        try
+                        {
+                            vm.SaveMainWindowState(_lastRestorableState == WindowState.Maximized);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(this, "Could not remember the window state: " + ex.Message,
+                                "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
                     vm.ShutdownFocusReminders();
+                }
                 _hotkeyService?.Dispose();
                 _trayService?.Dispose();
             }
@@ -236,7 +273,11 @@ namespace Workflow_Timer
             _restoringFromTray = true;
             try
             {
+                var restoreState = _lastRestorableState;
+                bool needsRestore = !IsVisible || WindowState == WindowState.Minimized;
                 WindowFocusService.BringIntoFocus(this);
+                if (needsRestore && WindowState != restoreState)
+                    WindowState = restoreState;
             }
             finally
             {
@@ -268,6 +309,8 @@ namespace Workflow_Timer
         protected override void OnStateChanged(EventArgs e)
         {
             base.OnStateChanged(e);
+            if (!_closing && !_restoringFromTray && IsVisible && WindowState != WindowState.Minimized)
+                _lastRestorableState = WindowState;
             if (!_closing && !_restoringFromTray && WindowState == WindowState.Minimized && _trayService != null &&
                 DataContext is MainViewModel vm && vm.CurrentSettings.MinimizeToTray)
                 Hide();
@@ -277,18 +320,18 @@ namespace Workflow_Timer
         {
             if (DataContext is not MainViewModel vm)
                 return;
-            var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
-            if (source == null)
+            try
             {
-                _hotkeyWarning = "Could not initialize global keyboard shortcuts.";
-                return;
+                var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+                if (source == null) return;
+                _hotkeyService = new HotkeyService(source);
+                _hotkeyService.HotkeyPressed += (_, action) => DispatchHotkey(action);
+                _hotkeyService.RegisterInitial(vm.CurrentSettings.Hotkeys);
             }
-            _hotkeyService = new HotkeyService(source);
-            _hotkeyService.HotkeyPressed += (_, action) => DispatchHotkey(action);
-            var errors = _hotkeyService.RegisterInitial(vm.CurrentSettings.Hotkeys);
-            if (errors.Count > 0)
-                _hotkeyWarning = "Some shortcuts could not be registered. Other shortcuts remain available.\n\n"
-                    + string.Join("\n", errors);
+            catch (Exception ex)
+            {
+                global::System.Diagnostics.Trace.TraceWarning("Hotkey initialization: {0}", ex.Message);
+            }
         }
 
         private void DispatchHotkey(HotkeyAction action)
@@ -320,32 +363,16 @@ namespace Workflow_Timer
         private void SaveSettingsWithHotkeys(MainViewModel vm, Settings settings)
         {
             SettingsService.Validate(settings);
-            if (_hotkeyService == null)
-            {
-                if (global::System.Linq.Enumerable.Any(settings.Hotkeys, binding => binding.IsAssigned))
-                    throw new InvalidOperationException("Global keyboard shortcuts could not be initialized.");
-                vm.SaveSettings(settings);
-                return;
-            }
-            var service = _hotkeyService;
-            var previous = service.Snapshot();
-            service.Apply(settings.Hotkeys);
+            // Persist first. A Windows registration failure must not block saving preferences.
+            vm.SaveSettings(settings);
             try
             {
-                vm.SaveSettings(settings);
+                if (_hotkeyService == null) InitializeHotkeys();
+                else _hotkeyService.Apply(settings.Hotkeys);
             }
-            catch (Exception saveError)
+            catch (Exception ex)
             {
-                try
-                {
-                    service.Apply(previous);
-                }
-                catch (Exception restoreError)
-                {
-                    throw new InvalidOperationException(saveError.Message +
-                        " Could not restore keyboard shortcuts: " + restoreError.Message, restoreError);
-                }
-                throw;
+                global::System.Diagnostics.Trace.TraceWarning("Hotkey update: {0}", ex.Message);
             }
         }
 

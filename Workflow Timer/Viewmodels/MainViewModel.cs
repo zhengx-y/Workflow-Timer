@@ -44,6 +44,9 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(MotivationQuoteText));
         }
         public Settings CurrentSettings { get; private set; } = new();
+        public ICommand ToggleThemeCommand { get; }
+        public string ThemeToggleText => CurrentSettings.Theme == Workflow_Timer.Enums.ThemeMode.Dark
+            ? "Light mode" : "Dark mode";
         public string? SettingsLoadWarning { get; private set; }
         public bool IsFocusReminderVisible => _focusReminder.IsVisible;
         public bool IsFocusReminderAttentionActive => _focusReminder.IsAttentionActive;
@@ -253,6 +256,7 @@ namespace Workflow_Timer.Viewmodels
             }
 
             ThemeService.Apply(CurrentSettings.Theme);
+            ToggleThemeCommand = new RelayCommand(ToggleTheme);
 
             _workflowTimer = new WorkflowTimer(
                 new WorkTimer(),
@@ -294,8 +298,10 @@ namespace Workflow_Timer.Viewmodels
 
             _overlayService = new OverlayService();
             _overlayService.ConfigurePosition(CurrentSettings.OverlayPosition,
-                CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop);
+                CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop,
+                CurrentSettings.HideWidget, CurrentSettings.OverlayCompact);
             _overlayService.PositionDragged += (_, point) => SaveOverlayPosition(point);
+            _overlayService.CompactChanged += (_, compact) => SaveOverlayCompact(compact);
             _overlayService.PauseRequested += (_, _) => PauseTimer();
             _overlayService.ResumeRequested += (_, _) => ResumeTimer();
 
@@ -379,6 +385,30 @@ namespace Workflow_Timer.Viewmodels
             RemoveScheduledActionCommand = new RelayCommand(RemoveScheduledAction);
         }
 
+        public void SaveMainWindowState(bool maximized)
+        {
+            // Do not overwrite unreadable settings or recreate data during a reset.
+            if (SettingsLoadWarning != null || DataManagementService.ResetInProgress ||
+                CurrentSettings.MainWindowMaximized == maximized) return;
+
+            var candidate = CurrentSettings.Copy();
+            candidate.MainWindowMaximized = maximized;
+            _settingsService.Save(candidate);
+            CurrentSettings = candidate;
+        }
+
+        public void SaveTutorialPreference(bool neverShow)
+        {
+            if (SettingsLoadWarning != null)
+                throw new InvalidOperationException("Resolve the settings load warning before saving preferences.");
+            if (CurrentSettings.NeverShowTutorial == neverShow) return;
+            var candidate = CurrentSettings.Copy();
+            candidate.NeverShowTutorial = neverShow;
+            _settingsService.Save(candidate);
+            CurrentSettings = candidate;
+            OnPropertyChanged(nameof(CurrentSettings));
+        }
+
         public void SaveSettings(Settings settings)
         {
             if (!CanEditSettings)
@@ -410,9 +440,39 @@ namespace Workflow_Timer.Viewmodels
             ThemeService.Apply(CurrentSettings.Theme);
             SettingsLoadWarning = null;
             _overlayService.ConfigurePosition(CurrentSettings.OverlayPosition,
-                CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop);
+                CurrentSettings.OverlayLeft, CurrentSettings.OverlayTop,
+                CurrentSettings.HideWidget, CurrentSettings.OverlayCompact);
             OnPropertyChanged(nameof(CurrentSettings));
+            OnPropertyChanged(nameof(ThemeToggleText));
             ConfigureFocusReminder();
+        }
+
+        private void ToggleTheme()
+        {
+            var previous = CurrentSettings.Theme;
+            var candidate = CurrentSettings.Copy();
+            candidate.Theme = previous == Workflow_Timer.Enums.ThemeMode.Dark
+                ? Workflow_Timer.Enums.ThemeMode.Light : Workflow_Timer.Enums.ThemeMode.Dark;
+            if (SettingsLoadWarning != null && MessageBox.Show(
+                "The existing settings could not be loaded. Saving the theme will replace the settings file. Continue?",
+                "Workflow Timer", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes)
+                return;
+            try
+            {
+                ThemeService.Apply(candidate.Theme);
+                _settingsService.Save(candidate);
+            }
+            catch (Exception ex)
+            {
+                ThemeService.Apply(previous);
+                MessageBox.Show("Could not save the theme: " + ex.Message, "Workflow Timer",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            CurrentSettings = candidate;
+            SettingsLoadWarning = null;
+            OnPropertyChanged(nameof(CurrentSettings));
+            OnPropertyChanged(nameof(ThemeToggleText));
         }
 
         private void ConfigureFocusReminder()
@@ -424,6 +484,23 @@ namespace Workflow_Timer.Viewmodels
         }
 
         public void ShutdownFocusReminders() => _focusReminder.Dispose();
+
+        private void SaveOverlayCompact(bool compact)
+        {
+            var candidate = CurrentSettings.Copy();
+            candidate.OverlayCompact = compact;
+            try
+            {
+                _settingsService.Save(candidate);
+                CurrentSettings = candidate;
+                OnPropertyChanged(nameof(CurrentSettings));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not save widget size: " + ex.Message, "Workflow Timer",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
 
         private void SaveOverlayPosition(Point point)
         {
