@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Workflow_Timer.Commands;
@@ -134,6 +135,15 @@ namespace Workflow_Timer.Viewmodels
 
         public string? PresetEditError => GetPresetValidationError() ?? _presetSaveError;
         public bool HasPresetEditError => PresetEditError != null;
+        public string? VisiblePresetEditError => PresetEditError == ScheduledActionViewModel.DurationConflictError ? null : PresetEditError;
+        public bool HasVisiblePresetEditError => VisiblePresetEditError != null;
+        public bool HasDurationConflict => SelectedPreset is Preset preset &&
+            TryParsePresetDuration(PresetWorkDraft, out var work) && work > TimeSpan.Zero &&
+            (preset.Session.Actions.Any(action => action.OffsetFromStart > work) ||
+             ScheduledActions.Any(row => TimeSpan.TryParseExact(row.OffsetText, "c",
+                 CultureInfo.InvariantCulture, out var offset) && offset > work));
+        public bool HasOtherActionErrors => ScheduledActions.Any(row => row.HasDisplayError);
+        public string DurationConflictMessage => ScheduledActionViewModel.DurationConflictError;
 
         private bool CanRunSelectedPreset => SelectedPreset != null &&
             !HasPresetEditError && !_resolvingPresetEdits &&
@@ -144,6 +154,8 @@ namespace Workflow_Timer.Viewmodels
         private void NotifyActionDraft()
         {
             OnPropertyChanged(nameof(HasUnsavedActionChanges));
+            OnPropertyChanged(nameof(HasDurationConflict));
+            OnPropertyChanged(nameof(HasOtherActionErrors));
             TimerCommands?.RefreshAvailability();
         }
 
@@ -442,11 +454,25 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(CurrentSettings));
         }
 
+        public void SavePanelVisibility(bool leftVisible, bool rightVisible)
+        {
+            if (SettingsLoadWarning != null || DataManagementService.ResetInProgress ||
+                (CurrentSettings.LeftPanelVisible == leftVisible && CurrentSettings.RightPanelVisible == rightVisible))
+                return;
+            var candidate = CurrentSettings.Copy();
+            candidate.LeftPanelVisible = leftVisible;
+            candidate.RightPanelVisible = rightVisible;
+            _settingsService.Save(candidate);
+            CurrentSettings = candidate;
+        }
+
         public void SaveSettings(Settings settings)
         {
             if (!CanEditSettings)
                 throw new InvalidOperationException("Stop the timer before changing settings.");
 
+            settings.LeftPanelVisible = CurrentSettings.LeftPanelVisible;
+            settings.RightPanelVisible = CurrentSettings.RightPanelVisible;
             SettingsService.Validate(settings);
             // Apply the explicit user choice only when Save is clicked.
             var restoreStartup = _startupService.Apply(settings.StartWithWindows);
@@ -957,6 +983,9 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(HasUnsavedPresetChanges));
             OnPropertyChanged(nameof(PresetEditError));
             OnPropertyChanged(nameof(HasPresetEditError));
+            OnPropertyChanged(nameof(VisiblePresetEditError));
+            OnPropertyChanged(nameof(HasVisiblePresetEditError));
+            OnPropertyChanged(nameof(HasDurationConflict));
             TimerCommands?.RefreshAvailability();
         }
 
@@ -969,10 +998,10 @@ namespace Workflow_Timer.Viewmodels
             NotifyPresetDraft();
         }
 
-        private bool FlushPresetSave()
+        private bool FlushPresetSave(ScheduledActionViewModel? skipAction = null)
         {
             _presetSaveTimer.Stop();
-            return !HasUnsavedPresetChanges || (CanEditSettings && TrySavePresetDraft());
+            return !HasUnsavedPresetChanges || (CanEditSettings && TrySavePresetDraft(skipAction));
         }
 
         private void ResetPresetDraft()
@@ -1000,11 +1029,11 @@ namespace Workflow_Timer.Viewmodels
                 !TryParsePresetDuration(PresetBreakDraft, out _))
                 return "Enter a preset name, a positive work duration and a valid break duration.";
             if (preset.Session.Actions.Any(action => action.OffsetFromStart > work))
-                return "A scheduled action exceeds the work duration. Adjust or remove it first.";
+                return ScheduledActionViewModel.DurationConflictError;
             return null;
         }
 
-        private bool TrySavePresetDraft()
+        private bool TrySavePresetDraft(ScheduledActionViewModel? skipAction = null)
         {
             if (SelectedPreset is not Preset preset || GetPresetValidationError() != null ||
                 !TryParsePresetDuration(PresetWorkDraft, out var work) ||
@@ -1036,6 +1065,17 @@ namespace Workflow_Timer.Viewmodels
             _presetSaveError = null;
             NotifyPresetDraft();
             NotifyGuidance();
+            if (oldWork != work)
+            {
+                // Retry offset-invalid drafts against the newly persisted work duration.
+                // Do not recreate rows or discard their unsaved edits.
+                foreach (var row in ScheduledActions.Where(row =>
+                    row != skipAction && row.Error == ScheduledActionViewModel.DurationConflictError).ToList())
+                    SaveActionDraft(row);
+                if (skipAction == null)
+                    SortActionRows();
+                NotifyActionDraft();
+            }
             return true;
         }
 
@@ -1100,6 +1140,19 @@ namespace Workflow_Timer.Viewmodels
             }
         }
 
+        private static string NextAvailableName(string prefix, IEnumerable<string> existingNames)
+        {
+            var used = new HashSet<string>(
+                existingNames.Select(name => name?.Trim() ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase);
+            for (int number = 1; ; number++)
+            {
+                string candidate = prefix + " " + number.ToString(CultureInfo.InvariantCulture);
+                if (!used.Contains(candidate))
+                    return candidate;
+            }
+        }
+
         private void CreatePreset()
         {
             if (!CanEditSettings || !ResolvePendingEdits())
@@ -1108,7 +1161,7 @@ namespace Workflow_Timer.Viewmodels
             var preset = new Preset
             {
                 Id = Guid.NewGuid(),
-                Name = "New Preset",
+                Name = NextAvailableName("New Preset", Presets.Select(p => p.Name)),
                 Session = new TimerSession
                 {
                     Label = "Work",
@@ -1262,7 +1315,9 @@ namespace Workflow_Timer.Viewmodels
             if (!CanEditActions()) return;
             var row = new ScheduledActionViewModel(new ScheduledAction
             {
-                Name = "New Action", Target = string.Empty, Enabled = true,
+                Name = NextAvailableName("New Action", ScheduledActions.Select(action => action.Name)
+                    .Concat(SelectedPreset!.Session.Actions.Select(action => action.Name))),
+                Target = string.Empty, Enabled = true,
                 OffsetFromStart = TimeSpan.Zero
             }, AutoSaveAction);
             row.SetPending("Enter an existing path or website URL.");
@@ -1270,10 +1325,18 @@ namespace Workflow_Timer.Viewmodels
             NotifyActionDraft();
         }
 
+        private const string ActionOffsetError = "Enter a valid Start after time (HH:MM:SS).";
+
         private void AutoSaveAction(ScheduledActionViewModel row)
         {
             if (!CanEditActions() || !ScheduledActions.Contains(row)) return;
-            if (HasUnsavedPresetChanges && !HasPresetEditError) FlushPresetSave();
+            if (HasUnsavedPresetChanges && !HasPresetEditError) FlushPresetSave(row);
+            SaveActionDraft(row);
+        }
+
+        private void SaveActionDraft(ScheduledActionViewModel row)
+        {
+            if (!CanEditActions() || !ScheduledActions.Contains(row)) return;
             var session = SelectedPreset!.Session;
             string? error = null;
             TimeSpan offset = TimeSpan.Zero;
@@ -1281,8 +1344,10 @@ namespace Workflow_Timer.Viewmodels
             string target = string.Empty;
             if (string.IsNullOrWhiteSpace(row.Name)) error = "Enter a name.";
             else if (!TimeSpan.TryParseExact(row.OffsetText, "c", CultureInfo.InvariantCulture, out offset)
-                || offset < TimeSpan.Zero || offset > session.WorkDuration)
-                error = "Enter an offset within the work duration (HH:MM:SS).";
+                || offset < TimeSpan.Zero)
+                error = ActionOffsetError;
+            else if (offset > session.WorkDuration)
+                error = ScheduledActionViewModel.DurationConflictError;
             else if (!TryInferTarget(row.Target, out type, out target)) error = "Enter an existing path or valid website URL.";
             if (error != null)
             {

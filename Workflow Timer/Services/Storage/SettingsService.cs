@@ -22,7 +22,7 @@ namespace Workflow_Timer.Services.Storage
             var path = _paths.SettingsPath;
             if (!File.Exists(path))
             {
-                var defaults = new Settings();
+                var defaults = new Settings { LeftPanelVisible = false, RightPanelVisible = false };
                 Save(defaults);
                 return defaults;
             }

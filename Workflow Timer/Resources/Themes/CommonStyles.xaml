@@ -78,8 +78,8 @@
     </Style>
     <!-- Animate only while the indicator is actually visible. -->
     <Style x:Key="WorkflowGuidanceDot" TargetType="Ellipse">
-        <Setter Property="Width" Value="9"/>
-        <Setter Property="Height" Value="9"/>
+        <Setter Property="Width" Value="12"/>
+        <Setter Property="Height" Value="12"/>
         <Setter Property="Margin" Value="0,0,7,0"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Fill" Value="{DynamicResource WorkflowTimerAccentBrush}"/>
@@ -91,7 +91,7 @@
                     <BeginStoryboard Name="GuidancePulse">
                         <Storyboard>
                             <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.4" To="1"
-                                             Duration="0:0:1.5" AutoReverse="True" RepeatBehavior="Forever">
+                                             Duration="0:0:1" AutoReverse="True" RepeatBehavior="Forever">
                                 <DoubleAnimation.EasingFunction>
                                     <SineEase EasingMode="EaseInOut"/>
                                 </DoubleAnimation.EasingFunction>

@@ -11,7 +11,8 @@
             </Grid.Resources>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -25,33 +26,36 @@
                     <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Decide which websites, files, folders or programs open automatically during a work session." Text="Scheduled Actions" FontSize="19" FontWeight="Bold" VerticalAlignment="Center"/>
                 </StackPanel>
             </DockPanel>
-            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
+            <TextBlock Grid.Row="1" Text="{Binding DurationConflictMessage}"
+                       Foreground="{DynamicResource WorkflowWarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,4,0,8"
+                       Visibility="{Binding HasDurationConflict, Converter={StaticResource ActionDraftVisibility}}"/>
+            <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
                           CanContentScroll="False" Margin="0,0,0,8">
-                <Grid MinWidth="720" Margin="0,0,0,8">
+                <Grid MinWidth="800" Margin="0,0,0,8">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" Margin="4,0,4,3">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="45"/>
+                            <ColumnDefinition Width="85"/>
                             <ColumnDefinition Width="53"/>
                             <ColumnDefinition Width="132"/>
                             <ColumnDefinition Width="142"/>
                             <ColumnDefinition Width="76"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Use the checkmark to enable or disable a scheduled action." Text="On" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Use the checkmark to enable or disable a scheduled action." Text="Activation" FontWeight="SemiBold" Margin="2,0"/>
                         <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Remove an action from the selected preset." Grid.Column="1" Text="Delete" FontWeight="SemiBold" Margin="2,0"/>
                         <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Give the action a recognizable name, such as Study notes." Grid.Column="2" Text="Name" FontWeight="SemiBold" Margin="2,0"/>
-                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="3" Text="Offset" FontWeight="SemiBold" Margin="2,0" ToolTip="Time after work starts, in hours, minutes and seconds. 00:05:00 opens the target five minutes into work; 00:00:00 opens it immediately."/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="3" Text="Start after:" FontWeight="SemiBold" Margin="2,0" ToolTip="The time offset after work starts. 00:05:00 opens the target five minutes into work; 00:00:00 opens it immediately."/>
                         <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a file, program or folder from your computer." Grid.Column="4" Text="Browse" FontWeight="SemiBold" Margin="2,0"/>
-                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Enter the website address or local file, folder or program path to open." Grid.Column="5" Text="Path / URL" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Enter the website address or local file, folder or program path to open." Grid.Column="5" Text="Enter URL or Browse for Path" FontWeight="SemiBold" Margin="2,0"/>
                     </Grid>
-                    <ListBox Grid.Row="1" ItemsSource="{Binding ScheduledActions}" MinHeight="55"
+                    <ListBox Grid.Row="1" ItemsSource="{Binding ScheduledActions}" MinHeight="200"
                              Padding="0" BorderThickness="0"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.VerticalScrollBarVisibility="Disabled"
                              ScrollViewer.CanContentScroll="False"
                              HorizontalContentAlignment="Stretch">
                         <ListBox.ItemContainerStyle>
@@ -66,7 +70,7 @@
                                 <StackPanel ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Margin="4,2,10,5" ToolTip="{Binding StatusText}">
                                     <Grid IsEnabled="{Binding DataContext.CanEditSettings, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="45"/>
+                                            <ColumnDefinition Width="85"/>
                                             <ColumnDefinition Width="53"/>
                                             <ColumnDefinition Width="132"/>
                                             <ColumnDefinition Width="142"/>
@@ -114,18 +118,18 @@
                                     </Grid>
                                     <TextBlock Text="{Binding Error}" Foreground="{DynamicResource WorkflowWarningBrush}"
                                                TextWrapping="Wrap" Margin="2,4,0,3"
-                                               Visibility="{Binding HasPendingChanges, Converter={StaticResource ActionDraftVisibility}}"/>
+                                               Visibility="{Binding HasDisplayError, Converter={StaticResource ActionDraftVisibility}}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
                 </Grid>
             </ScrollViewer>
-            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Valid action changes are saved automatically. Scroll sideways to see more of the target." Grid.Row="2" Text="Edits save automatically. Scroll horizontally for longer targets."
-                       Foreground="{DynamicResource WorkflowMutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0"/>
-            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Fill in required action details or remove incomplete actions before starting." Grid.Row="3" Text="Resolve incomplete actions before starting the timer."
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Valid action changes are saved automatically." Grid.Row="3" Text="Edits save automatically."
+                       Foreground="{DynamicResource WorkflowTimerAccentBrush}" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,3,0,0"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Fill in required action details or remove incomplete actions before starting." Grid.Row="4" Text="Resolve incomplete actions before starting the timer."
                        Foreground="{DynamicResource WorkflowWarningBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
-                       Visibility="{Binding HasUnsavedActionChanges, Converter={StaticResource ActionDraftVisibility}}"/>
+                       Visibility="{Binding HasOtherActionErrors, Converter={StaticResource ActionDraftVisibility}}"/>
         </Grid>
     </Border>
 </UserControl>

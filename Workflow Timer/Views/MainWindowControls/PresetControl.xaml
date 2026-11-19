@@ -1,7 +1,6 @@
 ﻿<UserControl x:Class="Workflow_Timer.Views.MainWindowControls.PresetControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:controls="clr-namespace:Workflow_Timer.Views.Controls">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <Border Style="{StaticResource WorkflowPanelFrame}"
             BorderThickness="1"
@@ -14,18 +13,19 @@
                 <BooleanToVisibilityConverter x:Key="UnsavedVisibility"/>
             </StackPanel.Resources>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+            <DockPanel Margin="0,0,0,10">
                 <Ellipse Style="{StaticResource WorkflowGuidanceDot}"
+                         DockPanel.Dock="Left"
                          Visibility="{Binding ShowPresetGuidance, Converter={StaticResource UnsavedVisibility}}"/>
-                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Create reusable work routines with their own work duration, break duration and scheduled actions." Text="Preset Manager"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Create reusable work routines with their own work duration, break duration and scheduled actions." Text="Preset Manager – What work do you have today?"
                        FontSize="20"
-                       FontWeight="Bold"/>
-            </StackPanel>
+                       FontWeight="Bold" TextWrapping="Wrap"/>
+            </DockPanel>
 
             <!-- Preset selection and management -->
-            <Grid Margin="0,0,0,12">
+            <Grid Margin="0,0,0,18" HorizontalAlignment="Left">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="240"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -50,19 +50,11 @@
             </Grid>
 
             <!-- Editable preset settings -->
-            <Grid>
+            <Grid HorizontalAlignment="Left">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="240"/>
                 </Grid.ColumnDefinitions>
-
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
 
                 <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Give this preset a recognizable name." Grid.Row="0"
                            Grid.Column="0"
@@ -72,37 +64,17 @@
 
                 <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Name this routine, for example Studying or Coding." Grid.Row="0"
                          Grid.Column="1"
-                         Grid.ColumnSpan="3"
                          MinHeight="28"
+                         GotKeyboardFocus="PresetName_GotKeyboardFocus"
+                         PreviewMouseLeftButtonDown="PresetName_PreviewMouseLeftButtonDown"
                          Margin="0,0,0,8"
                          Text="{Binding PresetNameDraft,
                                         Mode=TwoWay,
                                         UpdateSourceTrigger=PropertyChanged}"/>
 
-                <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,0,0,8">
-                    <StackPanel Margin="0,0,20,0">
-                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose how long you intend to focus before the break begins." Text="Work duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                        <controls:TimeSpinnerControl ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Set the planned work time in hours, minutes and seconds." DurationText="{Binding PresetWorkDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                    <StackPanel>
-                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose how long to rest after work. Set zero to skip the break." Text="Break duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                        <controls:TimeSpinnerControl ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Set the break duration. 00:00:00 skips the break." DurationText="{Binding PresetBreakDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <TextBlock Grid.Row="2"
-                           Grid.Column="0"
-                           Grid.ColumnSpan="4"
-                           Text="Hours : minutes : seconds — scroll, use arrows, or click to type."
-                           Foreground="{DynamicResource WorkflowMutedBrush}"
-                           FontSize="13" TextWrapping="Wrap"/>
             </Grid>
-            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Valid preset changes are saved without a Save button." Text="Changes save automatically." FontSize="13"
-                       Foreground="{DynamicResource WorkflowMutedBrush}" Margin="0,4,0,0"/>
-            <TextBlock Text="{Binding PresetEditError}"
-                       Foreground="{DynamicResource WorkflowWarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap"
-                       Margin="0,8,0,0"
-                       Visibility="{Binding HasPresetEditError, Converter={StaticResource UnsavedVisibility}}"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Valid preset changes are saved without a Save button." Text="Changes save automatically." FontSize="15" FontWeight="SemiBold"
+                       Foreground="{DynamicResource WorkflowTimerAccentBrush}" Margin="0,4,0,0"/>
 
         </StackPanel>
     </Border>

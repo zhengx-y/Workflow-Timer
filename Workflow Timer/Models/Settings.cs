@@ -12,6 +12,9 @@ namespace Workflow_Timer.Models
         public bool MinimizeToTray { get; set; } = false;
         // Only normal/maximized are persisted; minimized is never a startup state.
         public bool MainWindowMaximized { get; set; } = false;
+        // Existing settings without these fields retain their original expanded layout.
+        public bool LeftPanelVisible { get; set; } = true;
+        public bool RightPanelVisible { get; set; } = true;
         public ThemeMode Theme { get; set; } = ThemeMode.Light;
         public bool VisualGuidanceEnabled { get; set; } = true;
         public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.FreeDrag;

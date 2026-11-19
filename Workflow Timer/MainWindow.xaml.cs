@@ -61,6 +61,7 @@ namespace Workflow_Timer
                 LeftPanelButton.Content = "Hide tasks";
                 FitSidePanels(preferRight: false);
             }
+            RememberPanelVisibility();
         }
 
         private void ToggleRightPanel_Click(object sender, RoutedEventArgs e)
@@ -80,6 +81,48 @@ namespace Workflow_Timer
                 RightPanelButton.Content = "Hide history / motivation";
                 FitSidePanels(preferRight: true);
             }
+            RememberPanelVisibility();
+        }
+
+        private void RememberPanelVisibility()
+        {
+            if (DataContext is not MainViewModel vm) return;
+            try { vm.SavePanelVisibility(!_leftCollapsed, !_rightCollapsed); }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Could not remember panel visibility: " + ex.Message,
+                    "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void RestorePanelVisibility(Settings settings)
+        {
+            if (!settings.LeftPanelVisible)
+            {
+                _leftCollapsed = true;
+                HidePanel(LeftPanelColumn, LeftSplitterColumn, LeftPanel, LeftSplitter);
+                LeftPanelButton.Content = "Show tasks";
+            }
+            if (!settings.RightPanelVisible)
+            {
+                _rightCollapsed = true;
+                HidePanel(RightPanelColumn, RightSplitterColumn, RightPanel, RightSplitter);
+                RightPanelButton.Content = "Show history / motivation";
+            }
+        }
+
+        private void Scheduler_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Keep the spinner's own wheel interaction, but route other wheel input
+            // to the central scroll surface instead of the nested horizontal viewer.
+            for (DependencyObject? element = e.OriginalSource as DependencyObject;
+                 element is Visual; element = VisualTreeHelper.GetParent(element))
+            {
+                if (element is Workflow_Timer.Views.Controls.TimeSpinnerControl) return;
+                if (ReferenceEquals(element, sender)) break;
+            }
+            CenterScrollViewer.ScrollToVerticalOffset(CenterScrollViewer.VerticalOffset - e.Delta / 3.0);
+            e.Handled = true;
         }
 
         private static void HidePanel(ColumnDefinition column, ColumnDefinition divider,
@@ -149,6 +192,7 @@ namespace Workflow_Timer
 
             var viewModel = new MainViewModel();
             DataContext = viewModel;
+            RestorePanelVisibility(viewModel.CurrentSettings);
             _lastRestorableState = viewModel.CurrentSettings.MainWindowMaximized
                 ? WindowState.Maximized : WindowState.Normal;
             WindowState = _lastRestorableState;
@@ -240,6 +284,7 @@ namespace Workflow_Timer
                         try
                         {
                             vm.SaveMainWindowState(_lastRestorableState == WindowState.Maximized);
+                            vm.SavePanelVisibility(!_leftCollapsed, !_rightCollapsed);
                         }
                         catch (Exception ex)
                         {

@@ -76,13 +76,14 @@
     </UserControl.Resources>
     <Grid KeyboardNavigation.TabNavigation="Continue">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="46"/>
+            <ColumnDefinition Width="Auto" MinWidth="46"/>
             <ColumnDefinition Width="9"/>
-            <ColumnDefinition Width="31"/>
+            <ColumnDefinition Width="Auto" MinWidth="31"/>
             <ColumnDefinition Width="9"/>
-            <ColumnDefinition Width="31"/>
+            <ColumnDefinition Width="Auto" MinWidth="31"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -119,5 +120,12 @@
                       Content="⌄" ToolTip="Decrease minutes by one. Hold to repeat."/>
         <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Row="2" Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:-1" Click="Arrow_Click"
                       Content="⌄" ToolTip="Decrease seconds by one. Hold to repeat."/>
+        <!-- Labels are only needed for full duration editors, not compact scheduler offsets. -->
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="Hours" MinWidth="56" TextAlignment="Center" FontSize="12"
+                   Margin="0,4,0,0" Visibility="{Binding ShowArrows, ElementName=SpinnerRoot, Converter={StaticResource ArrowVisibility}}"/>
+        <TextBlock Grid.Row="3" Grid.Column="2" Text="Minutes" MinWidth="56" TextAlignment="Center" FontSize="12"
+                   Margin="0,4,0,0" Visibility="{Binding ShowArrows, ElementName=SpinnerRoot, Converter={StaticResource ArrowVisibility}}"/>
+        <TextBlock Grid.Row="3" Grid.Column="4" Text="Seconds" MinWidth="56" TextAlignment="Center" FontSize="12"
+                   Margin="0,4,0,0" Visibility="{Binding ShowArrows, ElementName=SpinnerRoot, Converter={StaticResource ArrowVisibility}}"/>
     </Grid>
 </UserControl>

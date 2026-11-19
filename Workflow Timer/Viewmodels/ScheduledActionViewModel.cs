@@ -28,8 +28,10 @@ namespace Workflow_Timer.Viewmodels
         public bool Enabled { get => _enabled; set { if (_enabled != value) { _enabled = value; Changed(); } } }
         public bool IsTriggered { get; private set; }
         public bool HasPendingChanges => _error != null;
+        public const string DurationConflictError = "A scheduled action starts after the work duration. Increase the work duration or shorten the Start after time.";
+        public bool HasDisplayError => HasPendingChanges && Error != DurationConflictError;
         public string? Error => _error;
-        public string StatusText => _error ?? (!Enabled ? "Disabled" : IsTriggered ? "Triggered" : "Pending");
+        public string StatusText => HasDisplayError ? _error! : (!Enabled ? "Disabled" : IsTriggered ? "Triggered" : "Pending");
         public string ActionType => Action.ActionType.ToString();
         public TimeSpan OffsetFromStart => Action.OffsetFromStart;
 
@@ -38,6 +40,7 @@ namespace Workflow_Timer.Viewmodels
             _error = error;
             OnPropertyChanged(nameof(Error));
             OnPropertyChanged(nameof(HasPendingChanges));
+            OnPropertyChanged(nameof(HasDisplayError));
             OnPropertyChanged(nameof(StatusText));
             OnPropertyChanged(nameof(ActionType));
             OnPropertyChanged(nameof(OffsetFromStart));
