@@ -3,23 +3,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Border Style="{StaticResource WorkflowPanelFrame}" Background="{DynamicResource WorkflowHistoryBrush}" BorderThickness="1" CornerRadius="6" Padding="12">
         <StackPanel>
-            <TextBlock Text="History &amp; Records" FontSize="19" FontWeight="Bold" Margin="0,0,0,14"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Review your recorded work time, past sessions and personal records." Text="History &amp; Records" FontSize="19" FontWeight="Bold" Margin="0,0,0,14"/>
 
-            <TextBlock Text="Today's work" Foreground="{DynamicResource WorkflowMutedBrush}"/>
-            <TextBlock Text="{Binding TodayWorkText}" FontSize="27" FontWeight="SemiBold" Foreground="{DynamicResource WorkflowTimerAccentBrush}" Margin="0,0,0,12"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Total recorded work time for today, excluding breaks." Text="Today's work" Foreground="{DynamicResource WorkflowMutedBrush}"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Total recorded work time for today, excluding breaks." Text="{Binding TodayWorkText}" FontSize="27" FontWeight="SemiBold" Foreground="{DynamicResource WorkflowTimerAccentBrush}" Margin="0,0,0,12"/>
 
-            <TextBlock Text="Personal best day" Foreground="{DynamicResource WorkflowMutedBrush}"/>
-            <TextBlock Text="{Binding BestDayText}" FontSize="22" FontWeight="SemiBold"/>
-            <TextBlock Text="{Binding BestDayDateText}" Foreground="{DynamicResource WorkflowMutedBrush}"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The day with the highest eligible recorded work total." Text="Personal best day" Foreground="{DynamicResource WorkflowMutedBrush}"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Your highest eligible daily work total." Text="{Binding BestDayText}" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The date of your current personal best." Text="{Binding BestDayDateText}" Foreground="{DynamicResource WorkflowMutedBrush}"/>
             <TextBlock Text="{Binding RecordResetText}" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="13" TextWrapping="Wrap" Margin="0,2,0,7"/>
-            <Button Content="Clear Personal Best" Command="{Binding ClearPersonalBestCommand}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Remove the current best day from the personal-best ranking. Daily totals and session history remain." Content="Clear Personal Best" Command="{Binding ClearPersonalBestCommand}"
                     HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,14"/>
 
             <Separator Margin="0,0,0,12"/>
-            <TextBlock Text="All recorded work" Foreground="{DynamicResource WorkflowMutedBrush}"/>
-            <TextBlock Text="{Binding AllTimeWorkText}" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,14"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Total work time recorded across all days." Text="All recorded work" Foreground="{DynamicResource WorkflowMutedBrush}"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Total work time recorded across all days." Text="{Binding AllTimeWorkText}" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,14"/>
 
-            <TextBlock Text="Daily totals" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="See how much work you recorded on each day." Text="Daily totals" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
             <ListBox ItemsSource="{Binding DailyHistory}" MaxHeight="148"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -46,7 +46,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
-            <TextBlock Text="Recent sessions" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Review individual work sessions, including completed and stopped sessions." Text="Recent sessions" FontWeight="Bold" FontSize="15" Margin="0,0,0,5"/>
             <ListBox ItemsSource="{Binding RecentHistory}" MaxHeight="320"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -63,7 +63,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
+                                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
                                 <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="13" TextWrapping="Wrap"/>
                             </StackPanel>
                             <TextBlock Grid.Column="1" Text="{Binding Duration}" VerticalAlignment="Center" Margin="8,0,0,0"/>
@@ -72,13 +72,13 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <WrapPanel Margin="0,8,0,0" VerticalAlignment="Center">
-                <TextBlock Text="Clear older than" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                <TextBox Width="76" MinWidth="76" Padding="6,3"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Remove recent session entries older than the chosen number of days." Text="Clear older than" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Enter the age threshold in days for clearing recent session entries." Width="76" MinWidth="76" Padding="6,3"
                          TextWrapping="Wrap" MaxLines="1" AcceptsReturn="False"
                          HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,0,5,0"
                          Text="{Binding RecentSessionAgeDays, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                <TextBlock Text="days" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <Button Content="Clear" Padding="10,4" Command="{Binding ClearOldRecentSessionsCommand}"/>
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The age threshold is measured in days." Text="days" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Clear recent session entries older than the specified age. Daily totals and records are preserved." Content="Clear" Padding="10,4" Command="{Binding ClearOldRecentSessionsCommand}"/>
             </WrapPanel>
             <TextBlock Text="Daily totals and records are preserved."
                        Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="13" TextWrapping="Wrap" Margin="0,5,0,0"/>

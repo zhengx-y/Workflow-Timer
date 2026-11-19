@@ -21,5 +21,8 @@
         public event global::System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
         public TimerSession Session { get; set; } = new();
+        public bool PresetGuidanceCompleted { get; set; }
+        public bool TodoGuidanceCompleted { get; set; }
+        public bool ActionGuidanceCompleted { get; set; }
     }
 }

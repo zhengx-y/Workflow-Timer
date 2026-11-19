@@ -13,6 +13,7 @@ namespace Workflow_Timer.Models
         // Only normal/maximized are persisted; minimized is never a startup state.
         public bool MainWindowMaximized { get; set; } = false;
         public ThemeMode Theme { get; set; } = ThemeMode.Light;
+        public bool VisualGuidanceEnabled { get; set; } = true;
         public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.FreeDrag;
         public OverlayPosition OverlayFixedPosition { get; set; } = OverlayPosition.TopLeft;
         public bool HideWidget { get; set; } = false;

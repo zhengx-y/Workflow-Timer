@@ -54,7 +54,7 @@
         <TextBlock Text="Select the type of target you want to open."
                    Foreground="{DynamicResource WorkflowMutedBrush}" TextWrapping="Wrap" Margin="0,5,0,16"/>
 
-        <Button Style="{StaticResource BrowseCardButton}" Click="OpenFile_Click"
+        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a document, executable, shortcut or other file to open automatically." Style="{StaticResource BrowseCardButton}" Click="OpenFile_Click"
                 AutomationProperties.Name="Open File or Executable" Margin="0,0,0,8">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -76,7 +76,7 @@
             </Grid>
         </Button>
 
-        <Button Style="{StaticResource BrowseCardButton}" Click="OpenFolder_Click"
+        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a folder to open automatically." Style="{StaticResource BrowseCardButton}" Click="OpenFolder_Click"
                 AutomationProperties.Name="Open Folder">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -97,7 +97,7 @@
                       HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform"/>
             </Grid>
         </Button>
-        <Button Content="Cancel" IsCancel="True" HorizontalAlignment="Right"
+        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Close the picker without changing the target." Content="Cancel" IsCancel="True" HorizontalAlignment="Right"
                 Padding="16,5" Margin="0,16,0,0"/>
     </StackPanel>
 </Window>

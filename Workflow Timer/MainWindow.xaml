@@ -16,13 +16,13 @@
     </Window.Resources>
     <DockPanel>
         <DockPanel DockPanel.Dock="Top" Margin="10,10,10,0" LastChildFill="False">
-            <Button DockPanel.Dock="Right" Content="Settings..." Padding="12,5" Style="{StaticResource WorkflowPrimaryButton}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Configure appearance, widget, reminders, sounds and shortcuts. Stop the timer before editing settings." DockPanel.Dock="Right" Content="Settings..." Padding="12,5" Style="{StaticResource WorkflowPrimaryButton}"
                     IsEnabled="{Binding CanEditSettings}" Click="SettingsButton_Click"/>
-            <Button DockPanel.Dock="Right" Content="{Binding ThemeToggleText}" Command="{Binding ToggleThemeCommand}"
-                    ToolTip="Switch theme" Margin="0,0,8,0" Padding="10,5"/>
-            <Button x:Name="RightPanelButton" DockPanel.Dock="Right" Content="Hide history / motivation"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" DockPanel.Dock="Right" Content="{Binding ThemeToggleText}" Command="{Binding ToggleThemeCommand}"
+                    ToolTip="Switch between light and dark appearance immediately." Margin="0,0,8,0" Padding="10,5"/>
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Show or hide the history and motivation panel." x:Name="RightPanelButton" DockPanel.Dock="Right" Content="Hide history / motivation"
                     Margin="0,0,8,0" Padding="10,5" Click="ToggleRightPanel_Click"/>
-            <Button x:Name="LeftPanelButton" DockPanel.Dock="Left" Content="Hide tasks"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Show or hide your to-do list." x:Name="LeftPanelButton" DockPanel.Dock="Left" Content="Hide tasks"
                     Padding="10,5" Click="ToggleLeftPanel_Click"/>
         </DockPanel>
         <Border DockPanel.Dock="Top" Margin="10,8,10,0" Padding="12"
@@ -42,16 +42,16 @@
                 </Style>
             </Border.Style>
             <StackPanel>
-                <TextBlock Text="Break is over!" FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource WorkflowFocusBannerTextBrush}"/>
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Your break has ended. Start another work session or postpone the reminder." Text="Break is over!" FontSize="19" FontWeight="SemiBold" Foreground="{DynamicResource WorkflowFocusBannerTextBrush}"/>
                 <TextBlock Text="Time to get back to work." Margin="0,3,0,8" Foreground="{DynamicResource WorkflowFocusBannerTextBrush}"/>
                 <WrapPanel>
-                    <Button Content="Start work" Command="{Binding TimerCommands.StartCommand}" Style="{StaticResource WorkflowPrimaryButton}"
+                    <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Start a new work session using the selected preset." Content="Start work" Command="{Binding TimerCommands.StartCommand}" Style="{StaticResource WorkflowPrimaryButton}"
                             Padding="14,6" Margin="0,0,8,0"/>
-                    <Button Content="{Binding SnoozeReminderText}" Command="{Binding SnoozeReminderCommand}"
+                    <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Postpone the reminder for the snooze duration in Settings." Content="{Binding SnoozeReminderText}" Command="{Binding SnoozeReminderCommand}"
                             Padding="14,6" Margin="0,0,8,0"/>
-                    <Button Content="Dismiss" Command="{Binding DismissReminderCommand}"
+                    <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Stop the current alert temporarily. Future reminders can still appear." Content="Dismiss" Command="{Binding DismissReminderCommand}"
                             IsEnabled="{Binding IsFocusReminderAttentionActive}" Padding="14,6" Margin="0,0,8,0"/>
-                    <Button Content="Cancel Reminder" Command="{Binding CancelReminderCommand}" Padding="14,6"/>
+                    <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Stop reminders until the next completed session." Content="Cancel Reminder" Command="{Binding CancelReminderCommand}" Padding="14,6"/>
                 </WrapPanel>
                 <TextBlock Text="{Binding FocusReminderIntervalText}" Margin="0,6,0,0" Foreground="{DynamicResource WorkflowFocusBannerMutedBrush}"/>
             </StackPanel>
@@ -66,7 +66,7 @@
                 <ColumnDefinition x:Name="RightPanelColumn" Width="320" MinWidth="320" MaxWidth="550"/>
             </Grid.ColumnDefinitions>
             <views:TodoControl x:Name="LeftPanel" Grid.Column="0" DataContext="{Binding Todo}"/>
-            <GridSplitter x:Name="LeftSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Center"
+            <GridSplitter ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Drag to change the width of the task panel." x:Name="LeftSplitter" Grid.Column="1" Width="6" HorizontalAlignment="Center"
                           VerticalAlignment="Stretch" ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" Background="{DynamicResource WorkflowSplitterBrush}"
                           ShowsPreview="True"/>
@@ -95,7 +95,7 @@
                     <views:ScheduledActionControl Grid.Row="1"/>
                 </Grid>
             </Grid>
-            <GridSplitter x:Name="RightSplitter" Grid.Column="3" Width="6" HorizontalAlignment="Center"
+            <GridSplitter ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Drag to change the width of the history and motivation panel." x:Name="RightSplitter" Grid.Column="3" Width="6" HorizontalAlignment="Center"
                           VerticalAlignment="Stretch" ResizeDirection="Columns"
                           ResizeBehavior="PreviousAndNext" Background="{DynamicResource WorkflowSplitterBrush}"
                           ShowsPreview="True"/>

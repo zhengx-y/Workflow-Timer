@@ -10,6 +10,11 @@ namespace Workflow_Timer.Services.TimerEngine
         private readonly BreakTimer _breakTimer;
 
         private TimerSession? _currentSession;
+        private TimeSpan? _earlyFinishedWorkElapsed;
+
+        public bool CanFinishWork =>
+            State == SessionState.Working ||
+            (State == SessionState.Paused && _workTimer.IsPaused);
 
 
         public TimerSession? CurrentSession => _currentSession;
@@ -41,7 +46,7 @@ namespace Workflow_Timer.Services.TimerEngine
 
         // Used by SchedulerService
         public TimeSpan WorkElapsedTime =>
-            _workTimer.ElapsedTime;
+            _earlyFinishedWorkElapsed ?? _workTimer.ElapsedTime;
 
 
         public TimeSpan BreakElapsedTime =>
@@ -98,6 +103,7 @@ namespace Workflow_Timer.Services.TimerEngine
 
 
             _currentSession = session;
+            _earlyFinishedWorkElapsed = null;
 
             State = SessionState.Working;
 
@@ -154,8 +160,21 @@ namespace Workflow_Timer.Services.TimerEngine
             _breakTimer.Stop();
 
             _currentSession = null;
+            _earlyFinishedWorkElapsed = null;
 
             State = SessionState.Idle;
+        }
+
+        public void FinishWork()
+        {
+            if (!CanFinishWork || _currentSession == null)
+                return;
+
+            // Stop resets the countdown; preserve actual elapsed work first.
+            _earlyFinishedWorkElapsed = _workTimer.ElapsedTime;
+            _workTimer.Stop();
+            WorkFinished(this, EventArgs.Empty);
+            Tick?.Invoke(this, EventArgs.Empty);
         }
 
 

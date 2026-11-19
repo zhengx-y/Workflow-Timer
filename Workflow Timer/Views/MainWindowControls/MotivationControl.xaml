@@ -5,10 +5,10 @@
             Padding="12" Margin="0,0,0,10">
         <StackPanel>
             <DockPanel Margin="0,0,0,10" LastChildFill="True">
-                <Button DockPanel.Dock="Right" Content="Next quote" Style="{StaticResource WorkflowPrimaryButton}"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Display another motivational quote." DockPanel.Dock="Right" Content="Next quote" Style="{StaticResource WorkflowPrimaryButton}"
                         Padding="10,4" Margin="8,0,0,0"
                         Command="{Binding NextMotivationQuoteCommand}"/>
-                <TextBlock Text="Motivation" FontSize="18" FontWeight="Bold"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Read inspirational quotes for encouragement and a fresh perspective." Text="Motivation" FontSize="18" FontWeight="Bold"
                            VerticalAlignment="Center"/>
             </DockPanel>
             <TextBlock Text="{Binding MotivationQuoteText}"

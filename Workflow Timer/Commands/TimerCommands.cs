@@ -13,6 +13,7 @@ namespace Workflow_Timer.Commands
         public ICommand ResumeCommand { get; }
 
         public ICommand StopCommand { get; }
+        public ICommand FinishCommand { get; }
 
         public ICommand RepeatCommand { get; }
 
@@ -27,7 +28,9 @@ namespace Workflow_Timer.Commands
             Action repeat,
             Action<object?> extend,
             Func<bool>? canStart = null,
-            Func<bool>? canRepeat = null)
+            Func<bool>? canRepeat = null,
+            Action? finish = null,
+            Func<bool>? canFinish = null)
         {
             StartCommand =
                 new RelayCommand(start, canStart);
@@ -41,6 +44,10 @@ namespace Workflow_Timer.Commands
             StopCommand =
                 new RelayCommand(stop);
 
+            FinishCommand = new RelayCommand(
+                () => finish?.Invoke(),
+                () => finish != null && (canFinish?.Invoke() ?? true));
+
             RepeatCommand =
                 new RelayCommand(repeat, canRepeat);
 
@@ -52,6 +59,7 @@ namespace Workflow_Timer.Commands
         {
             ((RelayCommand)StartCommand).RaiseCanExecuteChanged();
             ((RelayCommand)RepeatCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)FinishCommand).RaiseCanExecuteChanged();
         }
     }
 }

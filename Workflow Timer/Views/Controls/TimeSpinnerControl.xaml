@@ -88,36 +88,36 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <RepeatButton Grid.Column="0" Style="{StaticResource SpinnerArrow}" Tag="0:1" Click="Arrow_Click"
-                      Content="⌃" ToolTip="Increase hours"/>
-        <RepeatButton Grid.Column="2" Style="{StaticResource SpinnerArrow}" Tag="1:1" Click="Arrow_Click"
-                      Content="⌃" ToolTip="Increase minutes"/>
-        <RepeatButton Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:1" Click="Arrow_Click"
-                      Content="⌃" ToolTip="Increase seconds"/>
+        <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="0" Style="{StaticResource SpinnerArrow}" Tag="0:1" Click="Arrow_Click"
+                      Content="⌃" ToolTip="Increase hours by one. Hold to repeat."/>
+        <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="2" Style="{StaticResource SpinnerArrow}" Tag="1:1" Click="Arrow_Click"
+                      Content="⌃" ToolTip="Increase minutes by one. Hold to repeat."/>
+        <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:1" Click="Arrow_Click"
+                      Content="⌃" ToolTip="Increase seconds by one. Hold to repeat."/>
 
-        <TextBox x:Name="HoursBox" Grid.Row="1" Grid.Column="0" Style="{StaticResource SpinnerField}" Tag="0"
-                 AutomationProperties.Name="Hours" ToolTip="Hours — scroll or type" MaxLength="9"
+        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="HoursBox" Grid.Row="1" Grid.Column="0" Style="{StaticResource SpinnerField}" Tag="0"
+                 AutomationProperties.Name="Hours" ToolTip="Hours. Scroll the mouse wheel or click and type a number." MaxLength="9"
                  TextChanged="Field_TextChanged" PreviewTextInput="Field_PreviewTextInput"
                  PreviewMouseWheel="Field_PreviewMouseWheel" PreviewKeyDown="Field_PreviewKeyDown"
                  GotKeyboardFocus="Field_GotFocus" LostKeyboardFocus="Field_LostFocus"/>
         <TextBlock Grid.Row="1" Grid.Column="1" Text=":" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        <TextBox x:Name="MinutesBox" Grid.Row="1" Grid.Column="2" Style="{StaticResource SpinnerField}" Tag="1"
-                 AutomationProperties.Name="Minutes" ToolTip="Minutes — scroll or type" MaxLength="2"
+        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="MinutesBox" Grid.Row="1" Grid.Column="2" Style="{StaticResource SpinnerField}" Tag="1"
+                 AutomationProperties.Name="Minutes" ToolTip="Minutes (00–59). Scroll the mouse wheel or click and type a number." MaxLength="2"
                  TextChanged="Field_TextChanged" PreviewTextInput="Field_PreviewTextInput"
                  PreviewMouseWheel="Field_PreviewMouseWheel" PreviewKeyDown="Field_PreviewKeyDown"
                  GotKeyboardFocus="Field_GotFocus" LostKeyboardFocus="Field_LostFocus"/>
         <TextBlock Grid.Row="1" Grid.Column="3" Text=":" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        <TextBox x:Name="SecondsBox" Grid.Row="1" Grid.Column="4" Style="{StaticResource SpinnerField}" Tag="2"
-                 AutomationProperties.Name="Seconds" ToolTip="Seconds — scroll or type" MaxLength="2"
+        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="SecondsBox" Grid.Row="1" Grid.Column="4" Style="{StaticResource SpinnerField}" Tag="2"
+                 AutomationProperties.Name="Seconds" ToolTip="Seconds (00–59). Scroll the mouse wheel or click and type a number." MaxLength="2"
                  TextChanged="Field_TextChanged" PreviewTextInput="Field_PreviewTextInput"
                  PreviewMouseWheel="Field_PreviewMouseWheel" PreviewKeyDown="Field_PreviewKeyDown"
                  GotKeyboardFocus="Field_GotFocus" LostKeyboardFocus="Field_LostFocus"/>
 
-        <RepeatButton Grid.Row="2" Grid.Column="0" Style="{StaticResource SpinnerArrow}" Tag="0:-1" Click="Arrow_Click"
-                      Content="⌄" ToolTip="Decrease hours"/>
-        <RepeatButton Grid.Row="2" Grid.Column="2" Style="{StaticResource SpinnerArrow}" Tag="1:-1" Click="Arrow_Click"
-                      Content="⌄" ToolTip="Decrease minutes"/>
-        <RepeatButton Grid.Row="2" Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:-1" Click="Arrow_Click"
-                      Content="⌄" ToolTip="Decrease seconds"/>
+        <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Row="2" Grid.Column="0" Style="{StaticResource SpinnerArrow}" Tag="0:-1" Click="Arrow_Click"
+                      Content="⌄" ToolTip="Decrease hours by one. Hold to repeat."/>
+        <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Row="2" Grid.Column="2" Style="{StaticResource SpinnerArrow}" Tag="1:-1" Click="Arrow_Click"
+                      Content="⌄" ToolTip="Decrease minutes by one. Hold to repeat."/>
+        <RepeatButton ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Row="2" Grid.Column="4" Style="{StaticResource SpinnerArrow}" Tag="2:-1" Click="Arrow_Click"
+                      Content="⌄" ToolTip="Decrease seconds by one. Hold to repeat."/>
     </Grid>
 </UserControl>

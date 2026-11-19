@@ -108,6 +108,7 @@ namespace Workflow_Timer.Views
                 StartupCheck.IsChecked = settings.StartWithWindows;
                 TrayCheck.IsChecked = settings.MinimizeToTray;
                 ThemeBox.SelectedItem = settings.Theme;
+                VisualGuidanceCheck.IsChecked = settings.VisualGuidanceEnabled;
                 HideWidgetCheck.IsChecked = settings.HideWidget;
                 FreeDragCheck.IsChecked = settings.OverlayPosition == OverlayPosition.FreeDrag;
                 PositionBox.SelectedValue = settings.OverlayPosition == OverlayPosition.FreeDrag
@@ -166,6 +167,7 @@ namespace Workflow_Timer.Views
             a.FirstLaunchSetupCompleted == b.FirstLaunchSetupCompleted &&
             a.StartWithWindows == b.StartWithWindows && a.MinimizeToTray == b.MinimizeToTray &&
             a.Theme == b.Theme && a.OverlayPosition == b.OverlayPosition &&
+            a.VisualGuidanceEnabled == b.VisualGuidanceEnabled &&
             a.OverlayFixedPosition == b.OverlayFixedPosition && a.HideWidget == b.HideWidget &&
             a.OverlayCompact == b.OverlayCompact &&
             a.OverlayLeft == b.OverlayLeft && a.OverlayTop == b.OverlayTop &&
@@ -190,6 +192,7 @@ namespace Workflow_Timer.Views
             candidate.StartWithWindows = StartupCheck.IsChecked == true;
             candidate.MinimizeToTray = TrayCheck.IsChecked == true;
             candidate.Theme = theme;
+            candidate.VisualGuidanceEnabled = VisualGuidanceCheck.IsChecked == true;
             candidate.HideWidget = HideWidgetCheck.IsChecked == true;
             candidate.OverlayFixedPosition = position;
             candidate.OverlayPosition = FreeDragCheck.IsChecked == true ? OverlayPosition.FreeDrag : position;

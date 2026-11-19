@@ -14,10 +14,13 @@
                 <BooleanToVisibilityConverter x:Key="UnsavedVisibility"/>
             </StackPanel.Resources>
 
-            <TextBlock Text="Preset Manager"
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                <Ellipse Style="{StaticResource WorkflowGuidanceDot}"
+                         Visibility="{Binding ShowPresetGuidance, Converter={StaticResource UnsavedVisibility}}"/>
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Create reusable work routines with their own work duration, break duration and scheduled actions." Text="Preset Manager"
                        FontSize="20"
-                       FontWeight="Bold"
-                       Margin="0,0,0,10"/>
+                       FontWeight="Bold"/>
+            </StackPanel>
 
             <!-- Preset selection and management -->
             <Grid Margin="0,0,0,12">
@@ -27,20 +30,20 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ComboBox Grid.Column="0"
+                <ComboBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Select the saved routine you want to use. Stop the timer before changing presets." Grid.Column="0"
                           Margin="0,0,8,0"
                           MinHeight="30"
                           ItemsSource="{Binding Presets}"
                           DisplayMemberPath="Name"
                           SelectedItem="{Binding SelectedPreset, Mode=TwoWay}"/>
 
-                <Button Grid.Column="1"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Create a new reusable routine with its own timer and scheduled actions." Grid.Column="1"
                         Content="New preset" Style="{StaticResource WorkflowPrimaryButton}"
                         Padding="12,5"
                         Margin="0,0,6,0"
                         Command="{Binding PresetCommands.CreatePresetCommand}"/>
 
-                <Button Grid.Column="2"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Delete the selected preset." Grid.Column="2"
                         Content="Delete" Style="{StaticResource WorkflowDangerButton}"
                         Padding="12,5"
                         Command="{Binding PresetCommands.DeletePresetCommand}"/>
@@ -61,13 +64,13 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Give this preset a recognizable name." Grid.Row="0"
                            Grid.Column="0"
                            Text="Name:"
                            VerticalAlignment="Center"
                            Margin="0,0,10,8"/>
 
-                <TextBox Grid.Row="0"
+                <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Name this routine, for example Studying or Coding." Grid.Row="0"
                          Grid.Column="1"
                          Grid.ColumnSpan="3"
                          MinHeight="28"
@@ -78,12 +81,12 @@
 
                 <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="0,0,0,8">
                     <StackPanel Margin="0,0,20,0">
-                        <TextBlock Text="Work duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                        <controls:TimeSpinnerControl DurationText="{Binding PresetWorkDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose how long you intend to focus before the break begins." Text="Work duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <controls:TimeSpinnerControl ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Set the planned work time in hours, minutes and seconds." DurationText="{Binding PresetWorkDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
                     <StackPanel>
-                        <TextBlock Text="Break duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
-                        <controls:TimeSpinnerControl DurationText="{Binding PresetBreakDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose how long to rest after work. Set zero to skip the break." Text="Break duration" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <controls:TimeSpinnerControl ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Set the break duration. 00:00:00 skips the break." DurationText="{Binding PresetBreakDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                     </StackPanel>
                 </StackPanel>
 
@@ -94,7 +97,7 @@
                            Foreground="{DynamicResource WorkflowMutedBrush}"
                            FontSize="13" TextWrapping="Wrap"/>
             </Grid>
-            <TextBlock Text="Changes save automatically." FontSize="13"
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Valid preset changes are saved without a Save button." Text="Changes save automatically." FontSize="13"
                        Foreground="{DynamicResource WorkflowMutedBrush}" Margin="0,4,0,0"/>
             <TextBlock Text="{Binding PresetEditError}"
                        Foreground="{DynamicResource WorkflowWarningBrush}" FontWeight="SemiBold" TextWrapping="Wrap"

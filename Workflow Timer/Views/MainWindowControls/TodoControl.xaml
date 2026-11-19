@@ -32,18 +32,18 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <CheckBox IsChecked="{Binding IsCompleted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                              VerticalAlignment="Center" Margin="0,0,5,0" ToolTip="Mark complete or reopen"/>
-                    <TextBox x:Name="TaskTitle" Grid.Column="1" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" IsChecked="{Binding IsCompleted, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                              VerticalAlignment="Center" Margin="0,0,5,0" ToolTip="Check to mark this task complete; uncheck to reopen it."/>
+                    <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="TaskTitle" Grid.Column="1" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              FontWeight="SemiBold" TextWrapping="Wrap" VerticalContentAlignment="Center"
-                             Margin="0,0,4,0" ToolTip="Task title"/>
-                    <Button Grid.Column="2" Content="×" Padding="6,1" ToolTip="Delete task"
+                             Margin="0,0,4,0" ToolTip="Describe what you want to accomplish in a short title."/>
+                    <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="2" Content="×" Padding="6,1" ToolTip="Delete this task."
                             Command="{Binding DataContext.Commands.DeleteTaskCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
                             CommandParameter="{Binding}"/>
-                    <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,3,0,0"
+                    <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,3,0,0"
                              Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                              AcceptsReturn="True" TextWrapping="Wrap" MinHeight="22" MinLines="1"
-                             VerticalScrollBarVisibility="Auto" ToolTip="Task description"/>
+                             VerticalScrollBarVisibility="Auto" ToolTip="Add details, steps or notes for this task."/>
                 </Grid>
             </Border>
         </DataTemplate>
@@ -60,25 +60,29 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <DockPanel Margin="0,0,0,8">
-                <Button DockPanel.Dock="Right" Content="Add Task" Style="{StaticResource WorkflowPrimaryButton}" Padding="8,4"
-                        ToolTip="Create task" IsEnabled="{Binding CanEditTasks}" Click="AddTask_Click"/>
-                <TextBlock Text="To-Do List" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" DockPanel.Dock="Right" Content="Add Task" Style="{StaticResource WorkflowPrimaryButton}" Padding="8,4"
+                        ToolTip="Create a new task with a title and optional description." IsEnabled="{Binding CanEditTasks}" Click="AddTask_Click"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Style="{StaticResource WorkflowGuidanceDot}"
+                             Visibility="{Binding DataContext.ShowTodoGuidance, RelativeSource={RelativeSource AncestorType={x:Type Window}}, Converter={StaticResource TodoVisibility}}"/>
+                    <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Plan and create clear goals you want to focus on." Text="To-Do List" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
             </DockPanel>
             <StackPanel Grid.Row="1" Margin="0,0,0,10">
-                <TextBlock Text="Search titles" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="13"/>
-                <TextBox Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinHeight="26"/>
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Filter tasks by their titles." Text="Search titles" Foreground="{DynamicResource WorkflowMutedBrush}" FontSize="13"/>
+                <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Type part of a task title to find it." Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MinHeight="26"/>
             </StackPanel>
-            <TextBlock Grid.Row="2" Text="Active tasks" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Tasks you still want to complete." Grid.Row="2" Text="Active tasks" FontWeight="SemiBold" Margin="0,0,0,4"/>
             <ListBox x:Name="ActiveList" Grid.Row="3" ItemsSource="{Binding ActiveTasks}"
                      Style="{StaticResource TodoListStyle}" ItemTemplate="{StaticResource TodoItemTemplate}"
                      IsEnabled="{Binding CanEditTasks}"/>
-            <TextBlock Grid.Row="4" Text="Completed tasks" FontWeight="SemiBold" Margin="0,10,0,4"/>
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Finished tasks. Uncheck one to move it back to active tasks." Grid.Row="4" Text="Completed tasks" FontWeight="SemiBold" Margin="0,10,0,4"/>
             <ListBox Grid.Row="5" ItemsSource="{Binding CompletedTasks}"
                      Style="{StaticResource TodoListStyle}" ItemTemplate="{StaticResource TodoItemTemplate}"
                      IsEnabled="{Binding CanEditTasks}"/>
             <StackPanel Grid.Row="6" Margin="0,6,0,0">
                 <TextBlock Text="{Binding StorageStatus}" TextWrapping="Wrap" FontSize="13" Foreground="{DynamicResource WorkflowMutedBrush}"/>
-                <Button Content="Retry save" Command="{Binding Commands.RetrySaveCommand}" Margin="0,4,0,0"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Try saving unsaved task changes again." Content="Retry save" Command="{Binding Commands.RetrySaveCommand}" Margin="0,4,0,0"
                         Visibility="{Binding HasUnsavedChanges, Converter={StaticResource TodoVisibility}}"/>
             </StackPanel>
         </Grid>

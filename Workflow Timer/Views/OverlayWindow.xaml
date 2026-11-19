@@ -15,7 +15,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <TextBlock x:Name="StateText" Grid.Row="0" Text="WORKING"
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Current timer state. Drag here to move the widget when Free drag is enabled." x:Name="StateText" Grid.Row="0" Text="WORKING"
                        FontSize="14" FontWeight="Bold" TextAlignment="Center"
                        Background="Transparent" MouseLeftButtonDown="StateText_MouseLeftButtonDown"/>
             <Grid Grid.Row="1" Margin="0,2,0,4">
@@ -23,25 +23,25 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="TimeText" Text="00:00:00" Foreground="{DynamicResource WorkflowTimerAccentBrush}"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Time remaining. Drag the countdown to move the widget when Free drag is enabled." x:Name="TimeText" Text="00:00:00" Foreground="{DynamicResource WorkflowTimerAccentBrush}"
                            FontSize="32" FontWeight="Bold" TextAlignment="Center" VerticalAlignment="Center"
                            Background="Transparent" MouseLeftButtonDown="StateText_MouseLeftButtonDown"/>
-                <Button x:Name="CompactButton" Grid.Column="1" Content="−" FontSize="16" Width="28" Height="28"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="CompactButton" Grid.Column="1" Content="−" FontSize="16" Width="28" Height="28"
                         MinWidth="0" Padding="0" VerticalAlignment="Center" Margin="4,0,0,0"
-                        ToolTip="Minimize widget" Click="CompactButton_Click"/>
+                        ToolTip="Switch between the compact timer and full widget." Click="CompactButton_Click"/>
             </Grid>
             <StackPanel x:Name="ActionPanel" Grid.Row="2" Margin="0,0,0,8">
-                <TextBlock Text="NEXT ACTION" FontSize="12" FontWeight="Bold"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The next scheduled action that will open automatically." Text="NEXT ACTION" FontSize="12" FontWeight="Bold"
                            Foreground="{DynamicResource WorkflowMutedBrush}" HorizontalAlignment="Center"/>
-                <TextBlock x:Name="NextActionNameText" Text="No upcoming actions"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="NextActionNameText" Text="No upcoming actions"
                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
                            FontSize="13" FontWeight="SemiBold"
                            HorizontalAlignment="Stretch" TextAlignment="Center"
                            ToolTip="No upcoming actions"/>
-                <TextBlock x:Name="NextActionTimeText" Text="--:--:--"
+                <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Time until the next scheduled action launches." x:Name="NextActionTimeText" Text="--:--:--"
                            FontSize="18" FontWeight="Bold" TextAlignment="Center"/>
             </StackPanel>
-            <Button x:Name="PauseResumeButton" Grid.Row="3" Content="Pause" Style="{StaticResource WorkflowPrimaryButton}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Pause or resume the active timer." x:Name="PauseResumeButton" Grid.Row="3" Content="Pause" Style="{StaticResource WorkflowPrimaryButton}"
                     Width="112" Height="32" Padding="6,3" HorizontalAlignment="Center"
                     Click="PauseResumeButton_Click"/>
         </Grid>

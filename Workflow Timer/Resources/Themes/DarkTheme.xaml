@@ -7,6 +7,7 @@
     <SolidColorBrush x:Key="WorkflowAccentBrush" Color="#FF3573B9"/>
     <SolidColorBrush x:Key="WorkflowAccentTextBrush" Color="#FFFFFFFF"/>
     <SolidColorBrush x:Key="WorkflowDangerButtonBrush" Color="#FFA23849"/>
+    <SolidColorBrush x:Key="WorkflowSuccessButtonBrush" Color="#FF267A50"/>
     <SolidColorBrush x:Key="WorkflowTimerAccentBrush" Color="#FF9BC8FF"/>
     <SolidColorBrush x:Key="WorkflowTextBrush" Color="#FFF1F1F1"/>
     <SolidColorBrush x:Key="WorkflowMutedBrush" Color="#FFB9B9B9"/>

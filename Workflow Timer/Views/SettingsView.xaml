@@ -15,11 +15,11 @@
                        TextWrapping="Wrap" Margin="0,0,0,8" Visibility="Collapsed"/>
             <TextBlock x:Name="ErrorText" Foreground="{DynamicResource WorkflowErrorBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
             <DockPanel LastChildFill="False">
-                <Button DockPanel.Dock="Left" Content="Reset defaults" Padding="10,5"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Restore default settings. Save to keep the changes." DockPanel.Dock="Left" Content="Reset defaults" Padding="10,5"
                         Command="{Binding ResetDefaultsCommand}"/>
-                <Button DockPanel.Dock="Right" Content="Cancel" Padding="12,5"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Discard unsaved settings and restore the saved theme." DockPanel.Dock="Right" Content="Cancel" Padding="12,5"
                         IsCancel="True" Command="{Binding CancelCommand}"/>
-                <Button DockPanel.Dock="Right" Content="Save" Style="{StaticResource WorkflowPrimaryButton}" Padding="12,5" Margin="0,0,8,0"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Apply and save the selected settings." DockPanel.Dock="Right" Content="Save" Style="{StaticResource WorkflowPrimaryButton}" Padding="12,5" Margin="0,0,8,0"
                         IsDefault="True" Command="{Binding SaveCommand}"/>
             </DockPanel>
         </StackPanel>
@@ -28,71 +28,77 @@
                 <TextBlock Text="Settings" FontSize="22" FontWeight="SemiBold"/>
                 <TextBlock Text="Configure startup, widget placement, focus reminders, sounds and global keyboard shortcuts."
                            TextWrapping="Wrap" Margin="0,6,0,14"/>
-                <GroupBox Header="Help and introduction" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Learn how to use Workflow Timer." Header="Help and introduction" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <Button Content="Open Introduction and Tutorial" Click="OpenTutorial_Click"
+                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Reopen the introduction and step-by-step guide." Content="Open Introduction and Tutorial" Click="OpenTutorial_Click"
                                 HorizontalAlignment="Left" Padding="10,5"/>
                         <TextBlock Text="Review the guide at any time."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Appearance" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Customize the look of Workflow Timer." Header="Appearance" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <TextBlock Text="Theme"/>
-                        <ComboBox x:Name="ThemeBox" Margin="0,4,0,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a light or dark color scheme." Text="Theme"/>
+                        <ComboBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Preview a theme immediately. Save to keep it or Cancel to revert." x:Name="ThemeBox" Margin="0,4,0,0"/>
                         <TextBlock Text="Theme changes are previewed immediately. Save to keep the selected theme or Cancel to restore it."
+                                   TextWrapping="Wrap" Margin="0,5,0,0"/>
+                        <CheckBox x:Name="VisualGuidanceCheck" Content="Visual Guidance Indicators"
+                                  Margin="0,12,0,0" ToolTipService.InitialShowDelay="450"
+                                  ToolTipService.ShowDuration="20000"
+                                  ToolTip="Show softly pulsing dots next to sections you have not yet edited for the selected preset."/>
+                        <TextBlock Text="Highlight untouched sections until you make a saved edit. Guidance resets for new presets."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Startup" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose how Workflow Timer starts and behaves when minimized." Header="Startup" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <CheckBox x:Name="StartupCheck" Content="Start with Windows"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Automatically launch Workflow Timer when you sign in to Windows." x:Name="StartupCheck" Content="Start with Windows"/>
                         <TextBlock Text="Launch Workflow Timer when you sign in to Windows."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        <CheckBox x:Name="TrayCheck" Content="Minimize to system tray" Margin="0,10,0,0"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Hide the window in the system tray when minimized. Closing still exits." x:Name="TrayCheck" Content="Minimize to system tray" Margin="0,10,0,0"/>
                         <TextBlock Text="Minimizing hides the window; the tray icon restores it. Closing still exits."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
-                        <Button Content="Create Desktop Shortcut" Click="CreateDesktopShortcut_Click"
+                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Create or update a desktop shortcut immediately." Content="Create Desktop Shortcut" Click="CreateDesktopShortcut_Click"
                                 HorizontalAlignment="Left" Padding="10,5" Margin="0,10,0,0"/>
                         <TextBlock Text="Create or update the Workflow Timer shortcut on your desktop immediately."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Widget" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Customize the floating timer displayed during sessions." Header="Widget" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <CheckBox x:Name="HideWidgetCheck" Content="Hide widget" Margin="0,0,0,8"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Hide the floating timer without stopping the session." x:Name="HideWidgetCheck" Content="Hide widget" Margin="0,0,0,8"/>
                         <TextBlock Text="Keep the countdown running without showing the floating widget."
                                    TextWrapping="Wrap" Margin="0,0,0,10"/>
-                        <CheckBox x:Name="FreeDragCheck" Content="Free drag" Margin="0,0,0,8"/>
-                        <TextBlock Text="Fixed widget position"/>
-                        <ComboBox x:Name="PositionBox" Margin="0,4,0,0" DisplayMemberPath="Value" SelectedValuePath="Key"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Allow dragging the widget by its status or countdown." x:Name="FreeDragCheck" Content="Free drag" Margin="0,0,0,8"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Turn off Free drag to choose a fixed location." Text="Fixed widget position"/>
+                        <ComboBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a screen location, or reuse the last dragged position. Disable Free drag first." x:Name="PositionBox" Margin="0,4,0,0" DisplayMemberPath="Value" SelectedValuePath="Key"/>
                         <TextBlock Text="Free drag: drag the status label or countdown in either widget size. The last dragged position on the primary display is remembered."
                                    TextWrapping="Wrap" Margin="0,5,0,0"/>
                         <TextBlock Text="Use the minimize / expand button on the widget to switch between compact and full views."
                                    TextWrapping="Wrap" Margin="0,6,0,0"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Focus reminders" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose when and how the app reminds you to return to work." Header="Focus reminders" Margin="0,0,0,10">
                     <StackPanel Margin="10">
-                        <CheckBox x:Name="FocusCheck" Content="Remind me after the break ends" Margin="0,0,0,8"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Show a reminder after your break ends." x:Name="FocusCheck" Content="Remind me after the break ends" Margin="0,0,0,8"/>
                         <TextBlock Text="Show a persistent reminder when a break finishes naturally. Dismiss or snooze stops blinking temporarily; cancel stops reminders until the next completed break."
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
-                        <TextBlock Text="Reminder interval (minutes)"/>
-                        <TextBox x:Name="IntervalBox" Margin="0,4,0,8"/>
-                        <TextBlock Text="Snooze duration (minutes)"/>
-                        <TextBox x:Name="SnoozeBox" Margin="0,4,0,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="How often the reminder returns after being dismissed." Text="Reminder interval (minutes)"/>
+                        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Enter the number of minutes between reminders." x:Name="IntervalBox" Margin="0,4,0,8"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="How long the reminder is postponed when you snooze." Text="Snooze duration (minutes)"/>
+                        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Enter the number of minutes to postpone a reminder." x:Name="SnoozeBox" Margin="0,4,0,0"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Notification sounds" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose which timer events play an audible alert." Header="Notification sounds" Margin="0,0,0,10">
                     <StackPanel Margin="10">
                         <TextBlock Text="Play Alarm.mp3 for timer completion and SnoozeAlert.mp3 for focus reminders. Missing or unreadable files use the Windows beep."
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
-                        <CheckBox x:Name="WorkSoundCheck" Content="Work timer completed" Margin="0,0,0,5"/>
-                        <CheckBox x:Name="BreakSoundCheck" Content="Break timer completed" Margin="0,0,0,5"/>
-                        <CheckBox x:Name="ReminderSoundCheck" Content="Focus reminder"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Play a sound when work is completed." x:Name="WorkSoundCheck" Content="Work timer completed" Margin="0,0,0,5"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Play a sound when the break ends." x:Name="BreakSoundCheck" Content="Break timer completed" Margin="0,0,0,5"/>
+                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Play a sound when a focus reminder appears." x:Name="ReminderSoundCheck" Content="Focus reminder"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Global keyboard shortcuts" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Assign key combinations that can control the app even when another window is focused." Header="Global keyboard shortcuts" Margin="0,0,0,10">
                     <StackPanel Margin="10">
                         <TextBlock Text="Choose one or two different modifiers, click the Key field and press a key without modifiers. Backspace clears it. Letters, numbers, numpad, arrows, navigation, F1–F11, Space and layout-specific punctuation are supported. Windows may reserve some combinations."
                                    TextWrapping="Wrap" Margin="0,0,0,8"/>
@@ -103,10 +109,10 @@
                                 <ColumnDefinition Width="106"/>
                                 <ColumnDefinition Width="2*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Modifier 1" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="1" Text="Modifier 2" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="2" Text="Key" FontWeight="SemiBold"/>
-                            <TextBlock Grid.Column="3" Text="Action" FontWeight="SemiBold"/>
+                            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The first modifier key, such as Ctrl or Alt." Text="Modifier 1" FontWeight="SemiBold"/>
+                            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="An optional second, different modifier key." Grid.Column="1" Text="Modifier 2" FontWeight="SemiBold"/>
+                            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The main key pressed together with the chosen modifiers." Grid.Column="2" Text="Key" FontWeight="SemiBold"/>
+                            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The command performed by this shortcut." Grid.Column="3" Text="Action" FontWeight="SemiBold"/>
                         </Grid>
                         <ItemsControl x:Name="HotkeysList">
                             <ItemsControl.ItemTemplate>
@@ -118,35 +124,35 @@
                                             <ColumnDefinition Width="106"/>
                                             <ColumnDefinition Width="2*"/>
                                         </Grid.ColumnDefinitions>
-                                        <ComboBox Grid.Column="0" Margin="0,0,6,0"
+                                        <ComboBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose the first modifier key." Grid.Column="0" Margin="0,0,6,0"
                                                   ItemsSource="{Binding FirstModifiers, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   SelectedItem="{Binding Modifier1, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                        <ComboBox Grid.Column="1" Margin="0,0,6,0"
+                                        <ComboBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose an optional second modifier, different from the first." Grid.Column="1" Margin="0,0,6,0"
                                                   ItemsSource="{Binding SecondModifiers, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   SelectedItem="{Binding Modifier2, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
-                                        <TextBox x:Name="HotkeyKeyBox" Grid.Column="2" Margin="0,0,6,0"
+                                        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" x:Name="HotkeyKeyBox" Grid.Column="2" Margin="0,0,6,0"
                                                  IsReadOnly="True" HorizontalContentAlignment="Center"
                                                  Text="{Binding DisplayKey, Mode=OneWay}"
                                                  PreviewKeyDown="HotkeyKey_PreviewKeyDown"
-                                                 ToolTip="Press a key. Backspace clears the shortcut."/>
+                                                 ToolTip="Click here and press a key without modifiers. Press Backspace to clear it."/>
                                         <TextBlock Grid.Column="3" Text="{Binding ActionName}" TextWrapping="Wrap"
                                                    VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
-                        <Button Content="Clear all shortcuts" HorizontalAlignment="Left" Margin="0,8,0,0"
+                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Remove all configured keyboard shortcuts. Save to apply." Content="Clear all shortcuts" HorizontalAlignment="Left" Margin="0,8,0,0"
                                 Padding="8,4" Click="ClearHotkeys_Click"/>
                     </StackPanel>
                 </GroupBox>
-                <GroupBox Header="Data management" Margin="0,0,0,10">
+                <GroupBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Find or reset your saved application data." Header="Data management" Margin="0,0,0,10">
                     <StackPanel Margin="10">
                         <TextBlock Text="Open the application data folder to make manual backups of your presets, tasks, history and settings."
                                    TextWrapping="Wrap" Margin="0,0,0,6"/>
-                        <Button Content="Open Folder" Click="OpenDataFolder_Click" HorizontalAlignment="Left" Padding="10,5"/>
+                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Open the folder containing presets, tasks, history and settings for manual backups." Content="Open Folder" Click="OpenDataFolder_Click" HorizontalAlignment="Left" Padding="10,5"/>
                         <TextBlock Text="Delete saved application data and restart with factory defaults. This cannot be undone."
                                    TextWrapping="Wrap" Margin="0,12,0,6"/>
-                        <Button Content="Delete Data..." Click="DeleteData_Click" HorizontalAlignment="Left" Padding="10,5"
+                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Permanently delete saved data and restart with factory defaults. This cannot be undone." Content="Delete Data..." Click="DeleteData_Click" HorizontalAlignment="Left" Padding="10,5"
                                 Style="{StaticResource WorkflowDangerButton}"/>
                     </StackPanel>
                 </GroupBox>

@@ -61,5 +61,11 @@ namespace Workflow_Timer.Services.TimerEngine
         {
             _executedActions.Clear();
         }
+
+        public void CancelPendingActions()
+        {
+            _actions.Clear();
+            _executedActions.Clear();
+        }
     }
 }

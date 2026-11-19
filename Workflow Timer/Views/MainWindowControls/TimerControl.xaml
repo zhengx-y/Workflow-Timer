@@ -20,14 +20,14 @@
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0" HorizontalAlignment="Center">
-            <TextBlock Text="{Binding SelectedPreset.Name}"
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The name of the currently selected routine." Text="{Binding SelectedPreset.Name}"
                        FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center" TextWrapping="Wrap"/>
-            <TextBlock Text="{Binding State}"
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="The current session state: idle, working, break, paused or completed." Text="{Binding State}"
                        FontSize="15" HorizontalAlignment="Center" Foreground="{DynamicResource WorkflowMutedBrush}"
                        Margin="0,5,0,0"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="1"
+        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Time remaining in the current work or break period." Grid.Row="1"
            Text="{Binding RemainingTimeText}"
            FontSize="72"
            Foreground="{DynamicResource WorkflowTimerAccentBrush}"
@@ -37,27 +37,33 @@
 
         <!-- Start/Stop swap places; Pause/Resume swap places. -->
         <WrapPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,10">
-            <Button Content="Start" Style="{StaticResource WorkflowPrimaryButton}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Start the selected preset and its enabled scheduled actions." Content="Start" Style="{StaticResource WorkflowPrimaryButton}"
                     Command="{Binding TimerCommands.StartCommand}"
                     Visibility="{Binding CanStartTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
 
-            <Button Content="Stop" Style="{StaticResource WorkflowDangerButton}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="End the current session without marking unfinished work as completed or starting a break." Content="Stop" Style="{StaticResource WorkflowDangerButton}"
                     Command="{Binding TimerCommands.StopCommand}"
                     Visibility="{Binding HasActiveTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
 
-            <Button Content="Pause"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Content="Finish" Style="{StaticResource WorkflowSuccessButton}"
+                    Command="{Binding TimerCommands.FinishCommand}"
+                    Visibility="{Binding CanFinishWork, Converter={StaticResource BoolToVisibility}}"
+                    ToolTip="Mark work as completed early, record elapsed work time, and start the configured break. A zero-length break ends the session."
+                    Margin="5" Padding="18,8"/>
+
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Pause the current countdown until you resume." Content="Pause"
                     Command="{Binding TimerCommands.PauseCommand}"
                     Visibility="{Binding CanPauseTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
 
-            <Button Content="Resume" Style="{StaticResource WorkflowPrimaryButton}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Continue the paused countdown." Content="Resume" Style="{StaticResource WorkflowPrimaryButton}"
                     Command="{Binding TimerCommands.ResumeCommand}"
                     Visibility="{Binding CanResumeTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
 
-            <Button Content="Repeat"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Restart the routine from its beginning. The current work attempt is recorded before restarting." Content="Repeat"
                     Command="{Binding TimerCommands.RepeatCommand}"
                     Visibility="{Binding CanRepeatTimer, Converter={StaticResource BoolToVisibility}}"
                     Margin="5" Padding="18,8"/>
@@ -65,19 +71,19 @@
 
         <!-- Extensions remain visible but unavailable when no countdown is active. -->
         <WrapPanel Grid.Row="3" HorizontalAlignment="Center" Margin="0,10,0,0">
-            <Button Content="+3 min" Command="{Binding TimerCommands.ExtendCommand}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Add three minutes to the active countdown." Content="+3 min" Command="{Binding TimerCommands.ExtendCommand}"
                     CommandParameter="3" IsEnabled="{Binding CanExtendTimer}"
                     Margin="5" Padding="15,7"/>
-            <Button Content="+5 min" Command="{Binding TimerCommands.ExtendCommand}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Add five minutes to the active countdown." Content="+5 min" Command="{Binding TimerCommands.ExtendCommand}"
                     CommandParameter="5" IsEnabled="{Binding CanExtendTimer}"
                     Margin="5" Padding="15,7"/>
-            <Button Content="+10 min" Command="{Binding TimerCommands.ExtendCommand}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Add ten minutes to the active countdown." Content="+10 min" Command="{Binding TimerCommands.ExtendCommand}"
                     CommandParameter="10" IsEnabled="{Binding CanExtendTimer}"
                     Margin="5" Padding="15,7"/>
-            <Button Content="+30 min" Command="{Binding TimerCommands.ExtendCommand}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Add thirty minutes to the active countdown." Content="+30 min" Command="{Binding TimerCommands.ExtendCommand}"
                     CommandParameter="30" IsEnabled="{Binding CanExtendTimer}"
                     Margin="5" Padding="15,7"/>
-            <Button Content="+1 h" Command="{Binding TimerCommands.ExtendCommand}"
+            <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Add one hour to the active countdown." Content="+1 h" Command="{Binding TimerCommands.ExtendCommand}"
                     CommandParameter="60" IsEnabled="{Binding CanExtendTimer}"
                     Margin="5" Padding="15,7"/>
         </WrapPanel>

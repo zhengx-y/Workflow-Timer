@@ -44,6 +44,34 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(MotivationQuoteText));
         }
         public Settings CurrentSettings { get; private set; } = new();
+
+        private bool GuidanceVisible => CurrentSettings.VisualGuidanceEnabled &&
+            CanEditSettings && SelectedPreset != null;
+        public bool ShowPresetGuidance => GuidanceVisible && !SelectedPreset!.PresetGuidanceCompleted;
+        public bool ShowTodoGuidance => GuidanceVisible && !SelectedPreset!.TodoGuidanceCompleted;
+        public bool ShowActionGuidance => GuidanceVisible && !SelectedPreset!.ActionGuidanceCompleted;
+
+        private void NotifyGuidance()
+        {
+            OnPropertyChanged(nameof(ShowPresetGuidance));
+            OnPropertyChanged(nameof(ShowTodoGuidance));
+            OnPropertyChanged(nameof(ShowActionGuidance));
+        }
+
+        private void TodoTasksSaved(object? sender, EventArgs e)
+        {
+            if (SelectedPreset is not Preset preset || preset.TodoGuidanceCompleted)
+                return;
+            preset.TodoGuidanceCompleted = true;
+            try { PersistPresets(); }
+            catch (Exception ex)
+            {
+                preset.TodoGuidanceCompleted = false;
+                MessageBox.Show("Tasks were saved, but guidance progress could not be saved.\n\n" + ex.Message,
+                    "Workflow Timer", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            NotifyGuidance();
+        }
         public ICommand ToggleThemeCommand { get; }
         public string ThemeToggleText => CurrentSettings.Theme == Workflow_Timer.Enums.ThemeMode.Dark
             ? "Light mode" : "Dark mode";
@@ -178,6 +206,7 @@ namespace Workflow_Timer.Viewmodels
             RefreshScheduledActions();
 
             OnPropertyChanged(nameof(SelectedPreset));
+            NotifyGuidance();
             RememberSelectedPreset();
         }
 
@@ -221,6 +250,7 @@ namespace Workflow_Timer.Viewmodels
             State == SessionState.Working || State == SessionState.Break;
 
         public bool CanResumeTimer => State == SessionState.Paused;
+        public bool CanFinishWork => _workflowTimer.CanFinishWork;
 
         public bool CanRepeatTimer => HasActiveTimer || State == SessionState.Completed;
 
@@ -364,6 +394,7 @@ namespace Workflow_Timer.Viewmodels
 
             var rememberedId = _presetService.LoadSelectedPresetId();
             SelectedPreset = Presets.FirstOrDefault(p => p.Id == rememberedId) ?? Presets[0];
+            Todo.TasksSaved += TodoTasksSaved;
 
             TimerCommands = new TimerCommands(
                 StartTimer,
@@ -373,7 +404,9 @@ namespace Workflow_Timer.Viewmodels
                 RepeatTimer,
                 ExtendTimer,
                 () => CanStartTimer && CanRunSelectedPreset,
-                () => CanRepeatTimer && CanRunSelectedPreset);
+                () => CanRepeatTimer && CanRunSelectedPreset,
+                FinishWork,
+                () => CanFinishWork);
 
             PresetCommands = new PresetCommands(
                 LoadPreset,
@@ -444,6 +477,7 @@ namespace Workflow_Timer.Viewmodels
                 CurrentSettings.HideWidget, CurrentSettings.OverlayCompact);
             OnPropertyChanged(nameof(CurrentSettings));
             OnPropertyChanged(nameof(ThemeToggleText));
+            NotifyGuidance();
             ConfigureFocusReminder();
         }
 
@@ -630,6 +664,15 @@ namespace Workflow_Timer.Viewmodels
             UpdateOverlay();
 
             NotifyTimerProperties();
+        }
+
+        private void FinishWork()
+        {
+            if (!CanFinishWork)
+                return;
+
+            _schedulerService.CancelPendingActions();
+            _workflowTimer.FinishWork();
         }
 
         private void StopTimer()
@@ -971,9 +1014,11 @@ namespace Workflow_Timer.Viewmodels
             var oldName = preset.Name;
             var oldWork = preset.Session.WorkDuration;
             var oldBreak = preset.Session.BreakDuration;
+            var oldGuidance = preset.PresetGuidanceCompleted;
             preset.Name = PresetNameDraft.Trim();
             preset.Session.WorkDuration = work;
             preset.Session.BreakDuration = pause;
+            preset.PresetGuidanceCompleted = true;
             try
             {
                 PersistPresets();
@@ -983,12 +1028,14 @@ namespace Workflow_Timer.Viewmodels
                 preset.Name = oldName;
                 preset.Session.WorkDuration = oldWork;
                 preset.Session.BreakDuration = oldBreak;
+                preset.PresetGuidanceCompleted = oldGuidance;
                 _presetSaveError = "Could not save preset: " + ex.Message;
                 NotifyPresetDraft();
                 return false;
             }
             _presetSaveError = null;
             NotifyPresetDraft();
+            NotifyGuidance();
             return true;
         }
 
@@ -1245,6 +1292,8 @@ namespace Workflow_Timer.Viewmodels
             }
 
             var action = row.Action;
+            var preset = SelectedPreset!;
+            var oldGuidance = preset.ActionGuidanceCompleted;
             var old = (action.Name, action.ActionType, action.Target, action.OffsetFromStart, action.Enabled);
             var originalOrder = session.Actions.ToList();
             action.Name = row.Name.Trim();
@@ -1254,6 +1303,7 @@ namespace Workflow_Timer.Viewmodels
             action.Enabled = row.Enabled;
             if (!session.Actions.Contains(action)) session.Actions.Add(action);
             SortSelectedPresetActions();
+            preset.ActionGuidanceCompleted = true;
             try
             {
                 PersistPresets();
@@ -1262,10 +1312,12 @@ namespace Workflow_Timer.Viewmodels
             catch (Exception ex)
             {
                 session.Actions = originalOrder;
+                preset.ActionGuidanceCompleted = oldGuidance;
                 (action.Name, action.ActionType, action.Target, action.OffsetFromStart, action.Enabled) = old;
                 row.SetPending("Save failed: " + ex.Message);
             }
             NotifyActionDraft();
+            NotifyGuidance();
             if (HasUnsavedPresetChanges) QueuePresetSave();
         }
 
@@ -1280,16 +1332,21 @@ namespace Workflow_Timer.Viewmodels
             var originalOrder = session.Actions.ToList();
             if (session.Actions.Remove(row.Action))
             {
+                var preset = SelectedPreset!;
+                var oldGuidance = preset.ActionGuidanceCompleted;
+                preset.ActionGuidanceCompleted = true;
                 try { PersistPresets(); }
                 catch (Exception ex)
                 {
                     session.Actions = originalOrder;
+                    preset.ActionGuidanceCompleted = oldGuidance;
                     MessageBox.Show("Could not remove action: " + ex.Message, "Save failed");
                     return;
                 }
             }
             ScheduledActions.Remove(row);
             NotifyActionDraft();
+            NotifyGuidance();
             if (HasUnsavedPresetChanges) QueuePresetSave();
         }
 
@@ -1432,9 +1489,11 @@ namespace Workflow_Timer.Viewmodels
             OnPropertyChanged(nameof(HasActiveTimer));
             OnPropertyChanged(nameof(CanPauseTimer));
             OnPropertyChanged(nameof(CanResumeTimer));
+            OnPropertyChanged(nameof(CanFinishWork));
             OnPropertyChanged(nameof(CanRepeatTimer));
             OnPropertyChanged(nameof(CanExtendTimer));
             OnPropertyChanged(nameof(RemainingTimeText));
+            NotifyGuidance();
             TimerCommands?.RefreshAvailability();
         }
 

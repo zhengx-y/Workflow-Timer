@@ -24,6 +24,7 @@ namespace Workflow_Timer.Viewmodels
         public bool CanEditTasks { get; }
         public TodoItem? LastAddedTask { get; private set; }
         public bool HasUnsavedChanges => _hasUnsavedChanges;
+        public event EventHandler? TasksSaved;
         public string StorageStatus
         {
             get => _storageStatus;
@@ -133,13 +134,14 @@ namespace Workflow_Timer.Viewmodels
                 _hasUnsavedChanges = false;
                 OnPropertyChanged(nameof(HasUnsavedChanges));
                 StorageStatus = "Changes are saved automatically.";
-                return true;
             }
             catch (Exception ex)
             {
                 StorageStatus = "Tasks not saved — retry before closing. " + ex.Message;
                 return false;
             }
+            TasksSaved?.Invoke(this, EventArgs.Empty);
+            return true;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

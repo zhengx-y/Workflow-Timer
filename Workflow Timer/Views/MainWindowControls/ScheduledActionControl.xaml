@@ -16,10 +16,14 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <DockPanel Grid.Row="0" Margin="0,0,0,5">
-                <Button DockPanel.Dock="Right" Content="Add Action" Style="{StaticResource WorkflowPrimaryButton}"
-                        Padding="12,4" ToolTip="Add a scheduled action"
+                <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" DockPanel.Dock="Right" Content="Add Action" Style="{StaticResource WorkflowPrimaryButton}"
+                        Padding="12,4" ToolTip="Add an action to the selected preset. Stop the timer to edit actions."
                         IsEnabled="{Binding CanEditSettings}" Command="{Binding AddScheduledActionCommand}"/>
-                <TextBlock Text="Scheduled Actions" FontSize="19" FontWeight="Bold" VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Style="{StaticResource WorkflowGuidanceDot}"
+                             Visibility="{Binding ShowActionGuidance, Converter={StaticResource ActionDraftVisibility}}"/>
+                    <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Decide which websites, files, folders or programs open automatically during a work session." Text="Scheduled Actions" FontSize="19" FontWeight="Bold" VerticalAlignment="Center"/>
+                </StackPanel>
             </DockPanel>
             <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
                           CanContentScroll="False" Margin="0,0,0,8">
@@ -37,12 +41,12 @@
                             <ColumnDefinition Width="76"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="On" FontWeight="SemiBold" Margin="2,0"/>
-                        <TextBlock Grid.Column="1" Text="Delete" FontWeight="SemiBold" Margin="2,0"/>
-                        <TextBlock Grid.Column="2" Text="Name" FontWeight="SemiBold" Margin="2,0"/>
-                        <TextBlock Grid.Column="3" Text="Offset" FontWeight="SemiBold" Margin="2,0" ToolTip="HH:MM:SS"/>
-                        <TextBlock Grid.Column="4" Text="Browse" FontWeight="SemiBold" Margin="2,0"/>
-                        <TextBlock Grid.Column="5" Text="Path / URL" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Use the checkmark to enable or disable a scheduled action." Text="On" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Remove an action from the selected preset." Grid.Column="1" Text="Delete" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Give the action a recognizable name, such as Study notes." Grid.Column="2" Text="Name" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="3" Text="Offset" FontWeight="SemiBold" Margin="2,0" ToolTip="Time after work starts, in hours, minutes and seconds. 00:05:00 opens the target five minutes into work; 00:00:00 opens it immediately."/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Choose a file, program or folder from your computer." Grid.Column="4" Text="Browse" FontWeight="SemiBold" Margin="2,0"/>
+                        <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Enter the website address or local file, folder or program path to open." Grid.Column="5" Text="Path / URL" FontWeight="SemiBold" Margin="2,0"/>
                     </Grid>
                     <ListBox Grid.Row="1" ItemsSource="{Binding ScheduledActions}" MinHeight="55"
                              Padding="0" BorderThickness="0"
@@ -59,7 +63,7 @@
                         </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Margin="4,2,10,5" ToolTip="{Binding StatusText}">
+                                <StackPanel ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Margin="4,2,10,5" ToolTip="{Binding StatusText}">
                                     <Grid IsEnabled="{Binding DataContext.CanEditSettings, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="45"/>
@@ -69,26 +73,44 @@
                                             <ColumnDefinition Width="76"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <CheckBox IsChecked="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                        <CheckBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" IsChecked="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                   VerticalAlignment="Center" HorizontalAlignment="Left" Margin="4,0"
-                                                  ToolTip="Enable or disable this action"/>
-                                        <Button Grid.Column="1" Content="×" Padding="4,0" MinWidth="0" MinHeight="24" Margin="2,0"
-                                                ToolTip="Delete action"
+                                                  ToolTip="Checked actions run automatically; unchecked actions are skipped."/>
+                                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="1" Content="×" Padding="4,0" MinWidth="0" MinHeight="24" Margin="2,0"
+                                                ToolTip="Delete this scheduled action."
                                                 Command="{Binding DataContext.RemoveScheduledActionCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
                                                 CommandParameter="{Binding}"/>
-                                        <TextBox Grid.Column="2" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Margin="2,0" Padding="4,1" MinHeight="24" ToolTip="{Binding Name}"/>
-                                        <controls:TimeSpinnerControl Grid.Column="3"
+                                        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="2" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="2,0" Padding="4,1" MinHeight="24">
+                                            <TextBox.ToolTip>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <TextBlock Text="Enter a descriptive name for this action." TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding PlacementTarget.DataContext.Name, RelativeSource={RelativeSource AncestorType={x:Type ToolTip}}}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                        <controls:TimeSpinnerControl ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Set when this action launches, measured from the start of work." Grid.Column="3"
                                                  ShowArrows="False"
                                                  UseConstantFormat="True"
                                                  DurationText="{Binding OffsetText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="2,0" VerticalAlignment="Center"
                                                  LostKeyboardFocus="ActionOffsetLostFocus"/>
-                                        <Button Grid.Column="4" Content="Browse…" Padding="4,1" MinWidth="0" MinHeight="24" Margin="2,0"
+                                        <Button ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Select a local file, program or folder to open." Grid.Column="4" Content="Browse…" Padding="4,1" MinWidth="0" MinHeight="24" Margin="2,0"
                                                 Command="{Binding DataContext.BrowseActionTargetCommand, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}"
                                                 CommandParameter="{Binding}"/>
-                                        <TextBox Grid.Column="5" Text="{Binding Target, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                 Margin="2,0" Padding="4,1" MinHeight="24" ToolTip="{Binding Target}"/>
+                                        <TextBox ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" Grid.Column="5" Text="{Binding Target, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                 Margin="2,0" Padding="4,1" MinHeight="24">
+                                            <TextBox.ToolTip>
+                                                <ToolTip>
+                                                    <StackPanel>
+                                                        <TextBlock Text="Type or paste a website URL or a local file, folder or program path." TextWrapping="Wrap"/>
+                                                        <TextBlock Text="{Binding PlacementTarget.DataContext.Target, RelativeSource={RelativeSource AncestorType={x:Type ToolTip}}}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,5,0,0"/>
+                                                    </StackPanel>
+                                                </ToolTip>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
                                     </Grid>
                                     <TextBlock Text="{Binding Error}" Foreground="{DynamicResource WorkflowWarningBrush}"
                                                TextWrapping="Wrap" Margin="2,4,0,3"
@@ -99,9 +121,9 @@
                     </ListBox>
                 </Grid>
             </ScrollViewer>
-            <TextBlock Grid.Row="2" Text="Edits save automatically. Scroll horizontally for longer targets."
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Valid action changes are saved automatically. Scroll sideways to see more of the target." Grid.Row="2" Text="Edits save automatically. Scroll horizontally for longer targets."
                        Foreground="{DynamicResource WorkflowMutedBrush}" TextWrapping="Wrap" Margin="0,3,0,0"/>
-            <TextBlock Grid.Row="3" Text="Resolve incomplete actions before starting the timer."
+            <TextBlock ToolTipService.InitialShowDelay="450" ToolTipService.ShowDuration="20000" ToolTipService.ShowOnDisabled="True" ToolTip="Fill in required action details or remove incomplete actions before starting." Grid.Row="3" Text="Resolve incomplete actions before starting the timer."
                        Foreground="{DynamicResource WorkflowWarningBrush}" TextWrapping="Wrap" Margin="0,4,0,0"
                        Visibility="{Binding HasUnsavedActionChanges, Converter={StaticResource ActionDraftVisibility}}"/>
         </Grid>
